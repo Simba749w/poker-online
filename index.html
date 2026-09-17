@@ -150,7 +150,7 @@
             <div id="host-controls" style="display:none; margin-top:20px;">
                 <button class="btn btn-primary" style="font-size:1.2rem; padding:12px 30px;" onclick="iniciarPartidaOnline()">¡Comenzar Sala!</button>
             </div>
-            <p id="waiting-host-msg" style="color:#f39c12; font-style:italic;">Esperando a que el líder (👑) inicie la partida...</p>
+            <p id="waiting-host-msg" style="color:#f39c12; font-style:italic;">Esperando a que el líder (📯) inicie la partida...</p>
         </div>
     </div>
 
@@ -247,9 +247,9 @@
                         <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
                         
-                        <!-- BOTÓN ESTOY LISTO Y CONTROL DE LÍDER (👑) -->
+                        <!-- BOTÓN ESTOY LISTO Y CONTROL DE LÍDER (📯) -->
                         <button class="btn btn-primary" id="btn-estoy-listo" style="display:none; background:#8e44ad;" onclick="marcarListoOnline()">✅ ¡Estoy Listo!</button>
-                        <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 👑) ➡️</button>
+                        <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 📯) ➡️</button>
                     </div>
 
                     <div id="host-ready-status" style="margin-top:10px; font-size:0.9rem; color:#f39c12; display:none;">
@@ -281,7 +281,7 @@
         let esAnfitrionSala = false;
         let tiempoInicioMano = Date.now();
 
-        // 1. FUNCIONES MULTIJUGADOR ONLINE Y CORONA DE LÍDER (👑)
+        // 1. FUNCIONES MULTIJUGADOR ONLINE Y CORNETA DE LÍDER (📯)
         function crearSalaOnline() {
             miNombreOnline = document.getElementById('nombre-jugador').value.trim();
             if(!miNombreOnline) return alert("Ingresá tu nombre.");
@@ -307,13 +307,16 @@
                 let lista = document.getElementById('online-players-list');
                 lista.innerHTML = "";
                 datos.jugadores.forEach(j => {
-                    let etiquetaLider = j.esAnfitrion ? ' 👑 ' : '';
-                    lista.innerHTML += `<li>👤 ${j.nombre} - ${etiquetaLider}Stack: 10,000</li>`;
+                    let etiquetaLider = j.esAnfitrion ? ' 📯 ' : '';
+                    lista.innerHTML += `<li>👤 ${j.nombre}${etiquetaLider} - Stack: 10,000</li>`;
                 });
 
                 if (esAnfitrionSala) {
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('waiting-host-msg').style.display = 'none';
+                } else {
+                    document.getElementById('host-controls').style.display = 'none';
+                    document.getElementById('waiting-host-msg').style.display = 'block';
                 }
             });
 
@@ -327,6 +330,9 @@
                 if(esAnfitrionSala) {
                     document.getElementById('btn-next-street-host').style.display = 'inline-block';
                     document.getElementById('host-ready-status').style.display = 'block';
+                } else {
+                    document.getElementById('btn-next-street-host').style.display = 'none';
+                    document.getElementById('host-ready-status').style.display = 'none';
                 }
                 document.getElementById('btn-estoy-listo').style.display = 'inline-block';
             });
@@ -357,13 +363,14 @@
         }
 
         function iniciarPartidaOnline() {
+            if(!miCodigoSala) return;
             socket.emit('iniciarPartidaOnline', miCodigoSala);
         }
 
         function marcarListoOnline() {
             document.getElementById('btn-estoy-listo').style.display = 'none';
             socket.emit('jugadorListo', { codigo: miCodigoSala });
-            alert("✅ Marcado como listo. Esperando al líder (👑) para avanzar.");
+            alert("✅ Marcado como listo. Esperando al líder (📯) para avanzar.");
         }
 
         function avanzarCalleHostOnline() {
