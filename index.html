@@ -131,7 +131,7 @@
         </div>
         <div class="config-box" id="online-lobby-menu">
             <h3 style="color:var(--primary);">Stack 10,000 | Ciegas 100 / 200</h3>
-            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos.</p>
+            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos (máximo 9 jugadores).</p>
             <hr style="border-color:#444; margin: 20px 0;">
             
             <input type="text" id="nombre-jugador" placeholder="Tu Nombre" style="margin-bottom: 10px; width: 80%;"><br>
@@ -147,6 +147,8 @@
             <h3>Código de Sala: <span id="lbl-room-code" style="color:var(--accent);">----</span></h3>
             <p>Jugadores conectados en la mesa:</p>
             <ul id="online-players-list" style="list-style:none; padding:0; font-size:1.1rem; color:var(--primary);"></ul>
+            
+            <!-- CONTROLES DEL ANFITRIÓN (CORREGIDOS PARA APARECER AL LÍDER) -->
             <div id="host-controls" style="display:none; margin-top:20px;">
                 <button class="btn btn-primary" style="font-size:1.2rem; padding:12px 30px;" onclick="iniciarPartidaOnline()">¡Comenzar Sala!</button>
             </div>
@@ -184,7 +186,7 @@
         </div>
     </div>
 
-    <!-- MESA REAL EN VIVO (COMPARTIDA LOCAL Y ONLINE) -->
+    <!-- MESA REAL EN VIVO -->
     <div id="view-game" class="view" style="max-width: 1100px;">
         <div class="header-bar">
             <h2 id="game-title">🃏 Mesa de Póker en Vivo</h2>
@@ -192,7 +194,6 @@
         </div>
 
         <div class="game-layout">
-            <!-- ÁREA PRINCIPAL DE JUEGO -->
             <div class="main-game-area">
                 <div class="math-hud" id="hud-panel">
                     <strong>🧮 Asistente HUD (Cálculo en Vivo):</strong><br>
@@ -247,7 +248,6 @@
                         <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
                         
-                        <!-- BOTÓN ESTOY LISTO Y CONTROL DE LÍDER (👑) -->
                         <button class="btn btn-primary" id="btn-estoy-listo" style="display:none; background:#8e44ad;" onclick="marcarListoOnline()">✅ ¡Estoy Listo!</button>
                         <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 👑) ➡️</button>
                     </div>
@@ -260,7 +260,7 @@
                 </div>
             </div>
 
-            <!-- PANEL LATERAL DE RANKING EN VIVO (SOLO MODO ONLINE) -->
+            <!-- PANEL LATERAL DE RANKING EN VIVO -->
             <div class="sidebar-ranking" id="sidebar-ranking-box">
                 <h3 style="margin-top:0; color:var(--accent); font-size:1.1rem;">🏆 Ranking Online</h3>
                 <p style="font-size:0.8rem; color:#aaa;">Precisión y velocidad de la ronda:</p>
@@ -281,7 +281,6 @@
         let esAnfitrionSala = false;
         let tiempoInicioMano = Date.now();
 
-        // 1. FUNCIONES MULTIJUGADOR ONLINE Y CORONA DE LÍDER (👑)
         function crearSalaOnline() {
             miNombreOnline = document.getElementById('nombre-jugador').value.trim();
             if(!miNombreOnline) return alert("Ingresá tu nombre.");
@@ -299,7 +298,8 @@
             socket.on('actualizarSalaOnline', (datos) => {
                 miCodigoSala = datos.codigoSala;
                 esModoOnline = true;
-                esAnfitrionSala = datos.esAnfitrion;
+                esAnfitrionSala = datos.esAnfitrion; // 👑 AQUÍ SE CAPTURA CORRECTAMENTE SI SOS EL LÍDER
+                
                 document.getElementById('online-lobby-menu').style.display = 'none';
                 document.getElementById('online-waiting-room').style.display = 'block';
                 document.getElementById('lbl-room-code').innerText = miCodigoSala;
@@ -311,6 +311,7 @@
                     lista.innerHTML += `<li>👤 ${j.nombre}${etiquetaLider} - Stack: 10,000</li>`;
                 });
 
+                // 👑 AQUÍ SE MUESTRA EL BOTÓN DE INICIO SI SOS EL LÍDER
                 if (esAnfitrionSala) {
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('waiting-host-msg').style.display = 'none';
@@ -378,14 +379,12 @@
             nextStreet();
         }
 
-        // Autolisto automático a los 30 segundos si alguien se distrae
         setTimeout(() => {
             if(esModoOnline && document.getElementById('btn-estoy-listo').style.display !== 'none') {
                 marcarListoOnline();
             }
         }, 30000);
 
-        // 2. ESTADÍSTICAS Y LOCALSTORAGE
         let userData = { total: 0, aciertos: 0, racha: 0, mejorRacha: 0 };
         try {
             let stored = localStorage.getItem('pokerStatsV6');
@@ -396,7 +395,6 @@
             try { localStorage.setItem('pokerStatsV6', JSON.stringify(userData)); } catch(e) {}
         }
 
-        // 3. MOTOR DEL JUEGO DE PÓKER
         const palos = [{s:'♥',c:'red'}, {s:'♦',c:'red'}, {s:'♣',c:'black'}, {s:'♠',c:'black'}];
         const valoresMap = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14};
         let mazo = [], mesa = [], hero = [], jugadoresMesa = [];
@@ -520,7 +518,7 @@
 
         function iniciarMano() {
             buildDeck();
-            mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()]; // [Flop1, Flop2, Flop3, Turn, River]
+            mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()];
             hero = [mazo.pop(), mazo.pop()];
             street = 0; 
             isShowdown = false;
@@ -749,7 +747,6 @@
             let box = document.getElementById('explanation-box');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
             
-            // Temporizador de 1 minuto (60 segundos)
             if(box.style.display === 'block') {
                 let segundos = 60;
                 let intervalo = setInterval(() => {
