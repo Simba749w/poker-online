@@ -11,75 +11,86 @@ const salas = {};
 io.on('connection', (socket) => {
     console.log('Jugador conectado:', socket.id);
 
+    // Crear Sala Privada
     socket.on('crearSala', (datos) => {
         const codigoSala = Math.random().toString(36).substring(2, 6).toUpperCase();
         
         salas[codigoSala] = {
             anfitrion: socket.id,
             jugadores: [
-                { id: socket.id, nombre: datos.nombre, fichas: 10000, asiento: 1, estado: 'activo' }
+                { id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false }
             ],
             ciegaChica: 100,
             ciegaGrande: 200,
-            pozo: 300, // SB + BB inicial
-            fase: 'flop', // flop, turn, river
+            pozo: 300,
             estadoJuego: 'esperando'
         };
 
         socket.join(codigoSala);
-        socket.emit('actualizarSala', {
+        socket.emit('actualizarSalaOnline', {
             codigoSala: codigoSala,
             jugadores: salas[codigoSala].jugadores,
-            esAnfitrion: true,
-            ciegaChica: 100,
-            ciegaGrande: 200,
-            pozo: 300
+            esAnfitrion: true
         });
     });
 
+    // Unirse a Sala Existente
     socket.on('unirseSala', (datos) => {
         const sala = salas[datos.codigo];
         if (!sala) return socket.emit('errorSala', 'La sala no existe.');
         if (sala.estadoJuego === 'jugando') return socket.emit('errorSala', 'La partida ya comenzó.');
-        if (sala.jugadores.length >= 5) return socket.emit('errorSala', 'La mesa está llena (máximo 5 oponentes).');
+        if (sala.jugadores.length >= 6) return socket.emit('errorSala', 'La mesa está llena.');
 
-        const nuevoAsiento = sala.jugadores.length + 1;
         sala.jugadores.push({
             id: socket.id,
             nombre: datos.nombre,
             fichas: 10000,
-            asiento: nuevoAsiento,
-            estado: 'activo'
+            listo: false
         });
 
         socket.join(datos.codigo);
-        io.to(datos.codigo).emit('actualizarSala', {
+        io.to(datos.codigo).emit('actualizarSalaOnline', {
             codigoSala: datos.codigo,
             jugadores: sala.jugadores,
-            esAnfitrion: false,
-            ciegaChica: sala.ciegaChica,
-            ciegaGrande: sala.ciegaGrande,
-            pozo: sala.pozo
+            esAnfitrion: false
         });
     });
 
-    socket.on('iniciarPartida', (codigo) => {
+    // Iniciar Partida (Anfitrión)
+    socket.on('iniciarPartidaOnline', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.estadoJuego = 'jugando';
-            io.to(codigo).emit('partidaIniciada');
+            io.to(codigo).emit('partidaIniciadaOnline');
         }
     });
 
-    // Enviar jugada o cálculo realizado para comparar puntajes
-    socket.on('enviarCalculo', (datos) => {
-        io.to(datos.codigo).emit('resultadoCalculoJugador', {
+    // Recibir cálculos y puntajes de cada jugador en la ronda
+    socket.on('enviarCalculoOnline', (datos) => {
+        io.to(datos.codigo).emit('resultadoRankingJugador', {
             nombre: datos.nombre,
             outs: datos.outs,
             porcentaje: datos.porcentaje,
             potOdds: datos.potOdds,
-            tiempoSegundos: datos.tiempoSegundos
+            tiempoSegundos: datos.tiempoSegundos,
+            acierto: datos.acierto
         });
+    });
+
+    // Botón Estoy Listo para avanzar de ronda
+    socket.on('jugadorListo', (datos) => {
+        const sala = salas[datos.codigo];
+        if (sala) {
+            let jugador = sala.jugadores.find(j => j.id === socket.id);
+            if (jugador) jugador.listo = true;
+
+            // Verificar si todos están listos
+            let todosListos = sala.jugadores.every(j => j.listo);
+            if (todosListos) {
+                sala.jugadores.forEach(j => j.listo = false); // Reiniciar estado
+                io.to(datos.codigo).emit('avanzarSiguienteRonda');
+            }
+        }
     });
 
     socket.on('disconnect', () => {
@@ -89,5 +100,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-    console.log(`Servidor activo en puerto ${PORT}`);
+    console.log(`Servidor corriendo en puerto ${PORT}`);
 });
