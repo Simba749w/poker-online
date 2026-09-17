@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Odds Academy - Online Edition</title>
+    <title>Poker Odds Academy - Pro Edition</title>
     <style>
         :root {
             --bg-dark: #121212;
@@ -23,7 +23,7 @@
         }
         h1, h2, h3 { color: var(--accent); text-align: center; margin-top: 0;}
         
-        .view { display: none; width: 100%; max-width: 980px; background: var(--bg-panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); box-sizing: border-box; }
+        .view { display: none; width: 100%; max-width: 1050px; background: var(--bg-panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); box-sizing: border-box; }
         .active-view { display: block; }
 
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
@@ -45,6 +45,10 @@
         .btn-danger { background: var(--danger); }
         .btn-accent { background: var(--accent); color: black;}
         .btn:hover { filter: brightness(1.1); }
+
+        .game-layout { display: flex; gap: 20px; }
+        .main-game-area { flex: 3; }
+        .sidebar-ranking { flex: 1; background: #151515; border: 2px solid #333; border-radius: 10px; padding: 15px; height: fit-content; }
 
         .table-area { background: #143821; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px; border: 5px solid #6b3410; position: relative;}
         .cards-container { display: flex; justify-content: center; gap: 8px; margin: 10px 0; min-height: 65px; }
@@ -72,7 +76,7 @@
         }
 
         .opponents-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .opponent-seat { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 115px; text-align: center; border: 2px solid #444;}
+        .opponent-seat { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 110px; text-align: center; border: 2px solid #444;}
         .opponent-seat.folded-midgame { opacity: 0.3; border-color: var(--danger); }
         .border-green { border-color: var(--primary) !important; background: rgba(46, 204, 113, 0.1); }
         .border-red { border-color: var(--danger) !important; background: rgba(231, 76, 60, 0.1); opacity: 0.7;}
@@ -114,7 +118,7 @@
                 <span class="menu-icon">🧮</span> Práctica Asistida (HUD Matemático)
             </button>
             <button class="menu-btn" style="background: #2980b9; grid-column: span 2;" onclick="openView('view-online')">
-                <span class="menu-icon">🌐</span> Modo Competitivo con Amigos (Lobby)
+                <span class="menu-icon">🌐</span> Modo Competitivo con Amigos (Online 10k Stack)
             </button>
         </div>
     </div>
@@ -122,24 +126,35 @@
     <!-- LOBBY ONLINE CONECTADO -->
     <div id="view-online" class="view">
         <div class="header-bar">
-            <h2>🌐 Sala Multijugador</h2>
+            <h2>🌐 Sala Multijugador Online</h2>
             <button class="btn btn-danger" onclick="openView('view-menu')">Volver al Menú</button>
         </div>
-        <div class="config-box">
-            <h3 style="color:var(--primary);">Compite calculando Odds en vivo</h3>
-            <p style="color:#ccc; font-size:0.9rem;">Invita a tus amigos a la misma mesa. Ganará puntos el que tome mejores decisiones matemáticas.</p>
+        <div class="config-box" id="online-lobby-menu">
+            <h3 style="color:var(--primary);">Stack 10,000 | Ciegas 100 / 200</h3>
+            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos.</p>
             <hr style="border-color:#444; margin: 20px 0;">
             
-            <input type="text" id="nombre-jugador" placeholder="Tu Nombre de Jugador" style="margin-bottom: 10px; width: 80%;"><br>
+            <input type="text" id="nombre-jugador" placeholder="Tu Nombre" style="margin-bottom: 10px; width: 80%;"><br>
             <button class="btn btn-primary" style="padding: 12px 30px;" onclick="crearSalaOnline()">Crear Nueva Sala Privada</button>
             
             <h4 style="margin: 15px 0;">O únete a una sala existente:</h4>
-            <input type="text" id="codigo-sala" placeholder="Código de la Sala (ej. A7X9)" style="margin-bottom: 10px; width: 50%;"><br>
+            <input type="text" id="codigo-sala" placeholder="Código (ej. A7X9)" style="margin-bottom: 10px; width: 50%; text-transform: uppercase;"><br>
             <button class="btn btn-accent" style="padding: 10px 20px;" onclick="unirseSalaOnline()">Unirse a la Mesa</button>
+        </div>
+
+        <!-- SALA DE ESPERA (LOBBY INTERIOR) -->
+        <div id="online-waiting-room" class="config-box" style="display:none;">
+            <h3>Código de Sala: <span id="lbl-room-code" style="color:var(--accent);">----</span></h3>
+            <p>Jugadores conectados en la mesa:</p>
+            <ul id="online-players-list" style="list-style:none; padding:0; font-size:1.1rem; color:var(--primary);"></ul>
+            <div id="host-controls" style="display:none; margin-top:20px;">
+                <button class="btn btn-primary" style="font-size:1.2rem; padding:12px 30px;" onclick="iniciarPartidaOnline()">¡Comenzar Sala!</button>
+            </div>
+            <p id="waiting-host-msg" style="color:#f39c12; font-style:italic;">Esperando a que el anfitrión inicie la partida...</p>
         </div>
     </div>
 
-    <!-- CONFIGURACIÓN DE MESA -->
+    <!-- CONFIGURACIÓN DE MESA (PRÁCTICA LOCAL) -->
     <div id="view-config" class="view">
         <div class="header-bar">
             <h2 id="config-title">Configurar Partida</h2>
@@ -169,117 +184,176 @@
         </div>
     </div>
 
-    <!-- MESA REAL EN VIVO -->
-    <div id="view-game" class="view" style="max-width: 980px;">
+    <!-- MESA REAL EN VIVO (COMPARTIDA LOCAL Y ONLINE) -->
+    <div id="view-game" class="view" style="max-width: 1100px;">
         <div class="header-bar">
             <h2 id="game-title">🃏 Mesa de Póker en Vivo</h2>
             <button class="btn btn-danger" onclick="openView('view-menu')">Menú Principal</button>
         </div>
 
-        <div class="math-hud" id="hud-panel">
-            <strong>🧮 Asistente HUD (Cálculo en Vivo):</strong><br>
-            • Outs detectados: <span id="hud-outs" style="color:var(--accent); font-weight:bold;">0</span><br>
-            • Probabilidad estimada: <span id="hud-prob">0%</span> <br>
-            • Pot Odds: <span id="hud-odds">0%</span>
-        </div>
+        <div class="game-layout">
+            <!-- ÁREA PRINCIPAL DE JUEGO -->
+            <div class="main-game-area">
+                <div class="math-hud" id="hud-panel">
+                    <strong>🧮 Asistente HUD (Cálculo en Vivo):</strong><br>
+                    • Outs detectados: <span id="hud-outs" style="color:var(--accent); font-weight:bold;">0</span><br>
+                    • Probabilidad estimada: <span id="hud-prob">0%</span> <br>
+                    • Pot Odds: <span id="hud-odds">0%</span>
+                </div>
 
-        <div class="opponents-grid" id="opponents-container"></div>
+                <div class="opponents-grid" id="opponents-container"></div>
 
-        <div class="table-area">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                <span id="hero-badge"></span>
-                <h3 id="street-name" style="color: var(--accent); margin: 0;">PRE-FLOP</h3>
-                <span style="color: var(--primary); font-weight: bold;">Pozo: $<span id="pot-size">0</span></span>
-            </div>
-            
-            <div style="font-size: 0.85rem; color: #ccc;">Cartas Comunitarias</div>
-            <div class="cards-container" id="board-cards"></div>
-            
-            <div style="font-size: 0.85rem; color: #ccc; margin-top: 5px;">Tus Cartas (Hero)</div>
-            <div class="cards-container" id="hero-cards"></div>
-        </div>
+                <div class="table-area">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <span id="hero-badge"></span>
+                        <h3 id="street-name" style="color: var(--accent); margin: 0;">PRE-FLOP</h3>
+                        <span style="color: var(--primary); font-weight: bold;">Pozo: $<span id="pot-size">0</span></span>
+                    </div>
+                    
+                    <div style="font-size: 0.85rem; color: #ccc;">Cartas Comunitarias</div>
+                    <div class="cards-container" id="board-cards"></div>
+                    
+                    <div style="font-size: 0.85rem; color: #ccc; margin-top: 5px;">Tus Cartas (Hero) - Stack: <span id="hero-stack">10000</span></div>
+                    <div class="cards-container" id="hero-cards"></div>
+                </div>
 
-        <div id="action-panel" style="background: #222; padding: 15px; border-radius: 8px;">
-            <p id="opponent-action" style="color: var(--info); font-weight: bold; font-size: 0.95rem;"></p>
-            
-            <div class="math-input-box" id="question-panel">
-                <h4 style="margin:0 0 10px 0; color:var(--accent);">Calculá tu jugada:</h4>
-                <div class="input-group">
-                    <label>• ¿Cuántos <strong>Outs</strong> tenés?: </label>
-                    <input type="number" id="input-outs" placeholder="Ej: 9">
-                </div>
-                <div class="input-group">
-                    <label>• ¿Porcentaje de ganar estimado (%): </label>
-                    <input type="number" id="input-prob" placeholder="Ej: 36">
-                </div>
-                <div class="input-group">
-                    <label>• ¿Pot Odds requeridas del pozo (%): </label>
-                    <input type="number" id="input-odds" placeholder="Ej: 25">
-                </div>
-                <div style="margin-top: 15px;">
-                    <button class="btn btn-primary" onclick="submitAnswer('call')">PAGAR (Call)</button>
-                    <button class="btn btn-danger" onclick="submitAnswer('fold')">TIRARSE (Fold)</button>
+                <div id="action-panel" style="background: #222; padding: 15px; border-radius: 8px;">
+                    <p id="opponent-action" style="color: var(--info); font-weight: bold; font-size: 0.95rem;"></p>
+                    
+                    <div class="math-input-box" id="question-panel">
+                        <h4 style="margin:0 0 10px 0; color:var(--accent);">Calculá tu jugada:</h4>
+                        <div class="input-group">
+                            <label>• ¿Cuántos <strong>Outs</strong> tenés?: </label>
+                            <input type="number" id="input-outs" placeholder="Ej: 9">
+                        </div>
+                        <div class="input-group">
+                            <label>• ¿Porcentaje de ganar estimado (%): </label>
+                            <input type="number" id="input-prob" placeholder="Ej: 36">
+                        </div>
+                        <div class="input-group">
+                            <label>• ¿Pot Odds requeridas del pozo (%): </label>
+                            <input type="number" id="input-odds" placeholder="Ej: 25">
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-primary" onclick="submitAnswer('call')">PAGAR (Call)</button>
+                            <button class="btn btn-danger" onclick="submitAnswer('fold')">TIRARSE (Fold)</button>
+                        </div>
+                    </div>
+                    
+                    <div id="result-message" style="margin-top: 10px; font-weight: bold; font-size: 1.05rem;"></div>
+                    
+                    <div style="margin-top: 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <button class="btn btn-accent" id="btn-explain" style="display: none;" onclick="toggleExplanation()">💡 Explícame con Significado Detallado</button>
+                        <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
+                        <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
+                        
+                        <!-- BOTÓN ESTOY LISTO PARA MODO ONLINE -->
+                        <button class="btn btn-primary" id="btn-estoy-listo" style="display:none; background:#8e44ad;" onclick="marcarListoOnline()">✅ ¡Estoy Listo!</button>
+                        <span id="ready-status-msg" style="color:#f39c12; font-weight:bold; display:none;">Esperando que todos estén listos...</span>
+                    </div>
+                    
+                    <div class="explanation-box" id="explanation-box"></div>
                 </div>
             </div>
-            
-            <div id="result-message" style="margin-top: 10px; font-weight: bold; font-size: 1.05rem;"></div>
-            
-            <div style="margin-top: 10px;">
-                <button class="btn btn-accent" id="btn-explain" style="display: none;" onclick="toggleExplanation()">💡 Explícame con Significado Detallado</button>
-                <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
-                <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
+
+            <!-- PANEL LATERAL DE RANKING EN VIVO (MODO ONLINE) -->
+            <div class="sidebar-ranking">
+                <h3 style="margin-top:0; color:var(--accent); font-size:1.1rem;">🏆 Ranking Online</h3>
+                <p style="font-size:0.8rem; color:#aaa;">Precisión y velocidad de la ronda:</p>
+                <div id="live-ranking-list" style="font-size:0.85rem;">
+                    <p style="color:#666; font-style:italic;">Esperando jugadas...</p>
+                </div>
             </div>
-            
-            <div class="explanation-box" id="explanation-box"></div>
         </div>
     </div>
 
-    <!-- SCRIPT DE SOCKET.IO (Se coloca aquí abajo, antes de abrir el bloque de JavaScript del juego) -->
+    <!-- SCRIPT DE SOCKET.IO Y MOTOR DEL JUEGO -->
     <script src="/socket.io/socket.io.js"></script>
-
     <script>
-        // 1. FUNCIONES DEL MULTIJUGADOR ONLINE
         const socket = typeof io !== 'undefined' ? io() : null;
         let miNombreOnline = "";
-        let miSalaActual = "";
+        let miCodigoSala = "";
+        let esModoOnline = false;
+        let tiempoInicioMano = Date.now();
 
+        // 1. FUNCIONES MULTIJUGADOR ONLINE
         function crearSalaOnline() {
-            miNombreOnline = document.getElementById('nombre-jugador').value;
-            if(!miNombreOnline) return alert("Por favor, ingresá un nombre para jugar.");
+            miNombreOnline = document.getElementById('nombre-jugador').value.trim();
+            if(!miNombreOnline) return alert("Ingresá tu nombre.");
             socket.emit('crearSala', { nombre: miNombreOnline });
         }
 
         function unirseSalaOnline() {
-            miNombreOnline = document.getElementById('nombre-jugador').value;
-            let codigo = document.getElementById('codigo-sala').value.toUpperCase();
-            if(!miNombreOnline || !codigo) return alert("Falta tu nombre o el código de la sala.");
+            miNombreOnline = document.getElementById('nombre-jugador').value.trim();
+            let codigo = document.getElementById('codigo-sala').value.trim().toUpperCase();
+            if(!miNombreOnline || !codigo) return alert("Falta tu nombre o el código.");
             socket.emit('unirseSala', { nombre: miNombreOnline, codigo: codigo });
         }
 
         if (socket) {
-            socket.on('salaCreada', (datos) => {
-                miSalaActual = datos.codigoSala;
-                alert(`✅ ¡Sala creada!\nTu código es: ${miSalaActual}\nPasaselo a tus amigos para que entren.`);
+            socket.on('actualizarSalaOnline', (datos) => {
+                miCodigoSala = datos.codigoSala;
+                esModoOnline = true;
+                document.getElementById('online-lobby-menu').style.display = 'none';
+                document.getElementById('online-waiting-room').style.display = 'block';
+                document.getElementById('lbl-room-code').innerText = miCodigoSala;
+
+                let lista = document.getElementById('online-players-list');
+                lista.innerHTML = "";
+                datos.jugadores.forEach(j => {
+                    lista.innerHTML += `<li>👤 ${j.nombre} (Stack: 10,000)</li>`;
+                });
+
+                if (datos.esAnfitrion) {
+                    document.getElementById('host-controls').style.display = 'block';
+                    document.getElementById('waiting-host-msg').style.display = 'none';
+                }
             });
 
-            socket.on('salaUnidaExito', (datos) => {
-                miSalaActual = datos.codigoSala;
-                alert(`🎮 ¡Adentro! Te uniste a la sala ${miSalaActual}.`);
+            socket.on('errorSala', (msg) => { alert(msg); });
+
+            socket.on('partidaIniciadaOnline', () => {
+                openView('view-game');
+                document.getElementById('btn-estoy-listo').style.display = 'inline-block';
+                iniciarPartidaDirecta(5); // Ciegas 100/200 implícitas
             });
 
-            socket.on('jugadorUnido', (datos) => {
-                alert(`👋 ¡${datos.nombre} acaba de sentarse en la mesa!`);
+            socket.on('resultadoRankingJugador', (data) => {
+                let rankingDiv = document.getElementById('live-ranking-list');
+                if(rankingDiv.innerHTML.includes("Esperando")) rankingDiv.innerHTML = "";
+                let colorAcc = data.acierto ? 'var(--primary)' : 'var(--danger)';
+                rankingDiv.innerHTML += `
+                    <div style="background:#222; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid ${colorAcc}">
+                        <b>${data.nombre}</b><br>
+                        Outs: ${data.outs} | %: ${data.porcentaje}%<br>
+                        ⏱️ ${data.tiempoSegundos}s
+                    </div>
+                `;
+            });
+
+            socket.on('avanzarSiguienteRonda', () => {
+                document.getElementById('ready-status-msg').style.display = 'none';
+                document.getElementById('btn-estoy-listo').style.display = 'inline-block';
+                iniciarMano();
             });
         }
 
-        // 2. ESTADÍSTICAS Y LOCALSTORAGE (Con protección para celulares)
+        function iniciarPartidaOnline() {
+            socket.emit('iniciarPartidaOnline', miCodigoSala);
+        }
+
+        function marcarListoOnline() {
+            document.getElementById('btn-estoy-listo').style.display = 'none';
+            document.getElementById('ready-status-msg').style.display = 'inline-block';
+            socket.emit('jugadorListo', { codigo: miCodigoSala });
+        }
+
+        // 2. ESTADÍSTICAS Y LOCALSTORAGE
         let userData = { total: 0, aciertos: 0, racha: 0, mejorRacha: 0 };
         try {
             let stored = localStorage.getItem('pokerStatsV6');
             if (stored) userData = JSON.parse(stored);
-        } catch(e) {
-            console.warn("LocalStorage no disponible. Modo sin guardado activo.");
-        }
+        } catch(e) {}
 
         function saveStats() { 
             try { localStorage.setItem('pokerStatsV6', JSON.stringify(userData)); } catch(e) {}
@@ -289,7 +363,7 @@
         const palos = [{s:'♥',c:'red'}, {s:'♦',c:'red'}, {s:'♣',c:'black'}, {s:'♠',c:'black'}];
         const valoresMap = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14};
         let mazo = [], mesa = [], hero = [], jugadoresMesa = [];
-        let pot = 0, apuestaActual = 0, street = 0, totalJugadores = 6, dealerPos = 0, modoActual = '';
+        let pot = 300, apuestaActual = 200, street = 0, totalJugadores = 6, dealerPos = 0, modoActual = '';
         let correctOuts = 0, correctProb = 0, correctOdds = 0, realAction = '';
         let isShowdown = false;
         let highlightCards = [];
@@ -323,6 +397,8 @@
         }
 
         function openModeConfig(modo) {
+            esModoOnline = false;
+            document.getElementById('btn-estoy-listo').style.display = 'none';
             modoActual = modo;
             if(modo === 'infinitas' || modo === 'hud') { iniciarPartidaDirecta(6); } 
             else { openView('view-config'); }
@@ -358,14 +434,8 @@
         function evaluarMejorMano(cartasJugador, cartasComunitarias) {
             let todas = cartasJugador.concat(cartasComunitarias);
             if(todas.length < 5) return { score: 0, nombre: "En progreso", cartas: [], coreCards: [] };
-            
             let mejoresCombinaciones = [];
-            let combinaciones5 = getCombinations(todas, 5); 
-            
-            combinaciones5.forEach(combo => {
-                mejoresCombinaciones.push(puntuarCincoCartas(combo));
-            });
-            
+            getCombinations(todas, 5).forEach(combo => mejoresCombinaciones.push(puntuarCincoCartas(combo)));
             mejoresCombinaciones.sort((a, b) => b.score - a.score);
             return mejoresCombinaciones[0]; 
         }
@@ -375,27 +445,18 @@
             let vals = cartas.map(c => c.val);
             let palos = cartas.map(c => c.p);
             let esColor = palos.every(p => p === palos[0]);
-            
             let esEscalera = (vals[0] - vals[1] === 1 && vals[1] - vals[2] === 1 && vals[2] - vals[3] === 1 && vals[3] - vals[4] === 1);
-            let esEscaleraBaja = false;
-            if (vals[0] === 14 && vals[1] === 5 && vals[2] === 4 && vals[3] === 3 && vals[4] === 2) {
-                esEscalera = true; esEscaleraBaja = true;
-            }
+            let esEscaleraBaja = (vals[0] === 14 && vals[1] === 5 && vals[2] === 4 && vals[3] === 3 && vals[4] === 2);
+            if (esEscaleraBaja) esEscalera = true;
 
             let conteo = {};
             cartas.forEach(c => conteo[c.val] = (conteo[c.val] || 0) + 1);
-            
-            let uniqueVals = Object.keys(conteo).map(Number).sort((a, b) => {
-                if (conteo[a] !== conteo[b]) return conteo[b] - conteo[a];
-                return b - a; 
-            });
+            let uniqueVals = Object.keys(conteo).map(Number).sort((a, b) => conteo[b] !== conteo[a] ? conteo[b] - conteo[a] : b - a);
 
-            let kickerScore = 0;
-            let orderedValues = [];
+            let kickerScore = 0, orderedValues = [];
             uniqueVals.forEach(v => { for(let i=0; i<conteo[v]; i++) orderedValues.push(v); });
             if(esEscaleraBaja) orderedValues = [5, 4, 3, 2, 1];
-
-            for(let i=0; i<5; i++) { kickerScore += orderedValues[i] * Math.pow(15, 4-i); }
+            for(let i=0; i<5; i++) kickerScore += orderedValues[i] * Math.pow(15, 4-i);
 
             let isQuad = conteo[uniqueVals[0]] === 4;
             let isTrip = conteo[uniqueVals[0]] === 3;
@@ -403,8 +464,7 @@
             let isTwoPair = isPair && conteo[uniqueVals[1]] === 2;
             let isFullHouse = isTrip && conteo[uniqueVals[1]] === 2;
 
-            let score = 0; let nombre = ""; let coreCards = [];
-
+            let score = 0, nombre = "", coreCards = [];
             if (esColor && esEscalera) { score = 80000000 + kickerScore; nombre = "Escalera de Color"; coreCards = cartas; }
             else if (isQuad) { score = 70000000 + kickerScore; nombre = "Póker"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
             else if (isFullHouse) { score = 60000000 + kickerScore; nombre = "Full House"; coreCards = cartas; }
@@ -425,11 +485,12 @@
             street = 0; 
             isShowdown = false;
             highlightCards = [];
+            tiempoInicioMano = Date.now();
             
             jugadoresMesa = [];
             let sbPos = (dealerPos + 1) % totalJugadores;
             let bbPos = (dealerPos + 2) % totalJugadores;
-            pot = 30; apuestaActual = 20;
+            pot = 300; apuestaActual = 200;
 
             for(let i = 0; i < totalJugadores; i++) {
                 let rol = i === dealerPos ? 'D' : i === sbPos ? 'SB' : i === bbPos ? 'BB' : '';
@@ -445,7 +506,7 @@
             document.getElementById('explanation-box').style.display = 'none';
             document.getElementById('result-message').innerText = '';
             document.getElementById('street-name').innerText = "PRE-FLOP";
-            document.getElementById('opponent-action').innerText = "Ciegas colocadas. Repartiendo cartas iniciales.";
+            document.getElementById('opponent-action').innerText = "Ciegas 100/200 colocadas. Repartiendo cartas.";
             dealerPos = (dealerPos + 1) % totalJugadores;
         }
 
@@ -460,10 +521,7 @@
             document.getElementById('board-cards').innerHTML = mesa.length ? mesa.map(c => renderCard(c)).join('') : '<span style="color:#aaa; font-style:italic;">Esperando Flop...</span>';
 
             let heroObj = jugadoresMesa.find(j => j.esHero);
-            let badgeHtml = '';
-            if(heroObj.rol === 'D') badgeHtml = '<span class="badge badge-d">DEALER (D)</span>';
-            if(heroObj.rol === 'SB') badgeHtml = '<span class="badge badge-sb">SMALL BLIND</span>';
-            if(heroObj.rol === 'BB') badgeHtml = '<span class="badge badge-bb">BIG BLIND</span>';
+            let badgeHtml = heroObj.rol === 'D' ? '<span class="badge badge-d">DEALER (D)</span>' : heroObj.rol === 'SB' ? '<span class="badge badge-sb">SMALL BLIND</span>' : heroObj.rol === 'BB' ? '<span class="badge badge-bb">BIG BLIND</span>' : '';
             document.getElementById('hero-badge').innerHTML = badgeHtml;
 
             if(!isShowdown) {
@@ -497,7 +555,6 @@
             calcularMatematicaInterna();
             let mult = street === 1 ? 4 : 2;
             let pozoFinal = pot + apuestaActual;
-            
             document.getElementById('hud-outs').innerText = correctOuts;
             document.getElementById('hud-prob').innerHTML = `${correctOuts} &times; ${mult} = <strong style="color:var(--primary);">${correctProb}%</strong>`;
             document.getElementById('hud-odds').innerHTML = `${apuestaActual} &divide; ${pozoFinal} &times; 100 = <strong style="color:var(--info);">${correctOdds.toFixed(1)}%</strong>`;
@@ -533,11 +590,11 @@
                 if(j.esHero || !j.activo) return;
                 let r = Math.random();
                 if(r < 0.2) { j.activo = false; j.accion = "Fold"; } 
-                else if(r < 0.6) { pot += 20; j.accion = "Iguala $20"; } 
-                else { pot += 40; j.accion = `Sube $40`; maxB = 40; }
+                else if(r < 0.6) { pot += 200; j.accion = "Iguala $200"; } 
+                else { pot += 400; j.accion = `Sube $400`; maxB = 400; }
             });
             apuestaActual = maxB;
-            document.getElementById('opponent-action').innerText = apuestaActual > 0 ? `Oponente subió a $${apuestaActual}. ¡Turno de calcular!` : "Todos pasan.";
+            document.getElementById('opponent-action').innerText = apuestaActual > 0 ? `Apuesta de $${apuestaActual}. ¡Turno de calcular!` : "Todos pasan.";
         }
 
         function activarPanelMatematicoManual() {
@@ -550,8 +607,11 @@
             let uOuts = parseInt(document.getElementById('input-outs').value) || 0;
             let uProb = parseFloat(document.getElementById('input-prob').value) || 0;
             let uOdds = parseFloat(document.getElementById('input-odds').value) || 0;
+            let tiempoEmpleado = ((Date.now() - tiempoInicioMano) / 1000).toFixed(1);
+
             userData.total++;
             let acierto = Math.abs(uOuts-correctOuts)<=1 && Math.abs(uProb-correctProb)<=4 && Math.abs(uOdds-correctOdds)<=4 && decision===realAction;
+            
             if(acierto) {
                 document.getElementById('result-message').innerHTML = "✅ ¡Cálculos perfectos!"; document.getElementById('result-message').style.color = "var(--primary)";
                 userData.aciertos++;
@@ -559,10 +619,23 @@
                 document.getElementById('result-message').innerHTML = "❌ Hay errores matemáticos."; document.getElementById('result-message').style.color = "var(--danger)";
             }
             saveStats();
+
+            // Enviar al servidor si estamos online
+            if(esModoOnline && socket) {
+                socket.emit('enviarCalculoOnline', {
+                    codigo: miCodigoSala,
+                    nombre: miNombreOnline,
+                    outs: uOuts,
+                    porcentaje: uProb,
+                    potOdds: uOdds,
+                    tiempoSegundos: tiempoEmpleado,
+                    acierto: acierto
+                });
+            }
+
             document.getElementById('question-panel').style.display = 'none';
             document.getElementById('btn-explain').style.display = 'inline-block';
             document.getElementById('btn-next-street').style.display = 'inline-block';
-            
             prepararExplicacionDetallada();
         }
 
@@ -572,20 +645,14 @@
             let pozoFinal = pot + apuestaActual;
 
             let html = `<strong>💡 Explicación detallada con el Significado de cada Número:</strong><br><br>
-            
             1️⃣ <strong>¿Qué son tus Outs (${correctOuts})?</strong><br>
-            • Representan la cantidad exacta de cartas que quedan escondidas en el mazo y que completan tu jugada.<br><br>
-            
+            • Representan la cantidad exacta de cartas que completan tu jugada.<br><br>
             2️⃣ <strong>¿Qué significa la cuenta del Porcentaje (${correctOuts} × ${mult} = ${correctProb}%)?</strong><br>
-            • <strong>${correctOuts}:</strong> Son tus outs calculados.<br>
-            • <strong>${mult}:</strong> Es la constante de la regla del ${faseTxt}.<br><br>
-            
+            • Es la constante matemática de la regla del ${faseTxt}.<br><br>
             3️⃣ <strong>¿Qué significa la cuenta de Pot Odds (${apuestaActual} ÷ ${pozoFinal} × 100 = ${correctOdds.toFixed(1)}%)?</strong><br>
-            • <strong>$${apuestaActual}:</strong> Es tu costo para ver la próxima carta.<br>
-            • <strong>$${pozoFinal}:</strong> Es el pozo final acumulado ($${pot} del pozo + $${apuestaActual} de tu igualación).<br><br>
-            
+            • Costo para ver la próxima carta ($${apuestaActual}) dividido el pozo final ($${pozoFinal}).<br><br>
             4️⃣ <strong>Conclusión:</strong><br>
-            • Como tu probabilidad de ganar (${correctProb}%) es ${correctProb >= correctOdds ? 'MAYOR' : 'MENOR'} que lo que te exige el pozo (${correctOdds.toFixed(1)}%), la decisión correcta es <strong>${realAction.toUpperCase()}</strong>.`;
+            • Como tu probabilidad (${correctProb}%) es ${correctProb >= correctOdds ? 'MAYOR' : 'MENOR'} que lo que exige el pozo (${correctOdds.toFixed(1)}%), la decisión correcta es <strong>${realAction.toUpperCase()}</strong>.`;
 
             document.getElementById('explanation-box').innerHTML = html;
         }
@@ -594,19 +661,14 @@
             isShowdown = true;
             renderMesaCompleta(); 
 
-            let htmlOpps = '';
-            let activosScore = [];
-
+            let htmlOpps = '', activosScore = [];
             jugadoresMesa.forEach((j) => {
                 let res = evaluarMejorMano(j.cartas, mesa);
                 let bColor = j.activo ? 'border-green' : 'border-red';
                 let txtColor = j.activo ? '#2ecc71' : '#e74c3c';
                 let estado = j.activo ? 'Activo' : 'Retirado';
 
-                if(j.activo) {
-                    activosScore.push({ id: j.id, esHero: j.esHero, nombreMano: res.nombre, score: res.score, manoObj: j });
-                }
-
+                if(j.activo) activosScore.push({ id: j.id, esHero: j.esHero, nombreMano: res.nombre, score: res.score });
                 if(j.esHero) return; 
 
                 htmlOpps += `<div class="opponent-seat ${bColor}">
@@ -621,23 +683,31 @@
 
             activosScore.sort((a, b) => b.score - a.score);
             let ganador = activosScore[0];
-
             if(ganador.esHero) {
                 let heroGanadorRes = evaluarMejorMano(hero, mesa);
                 highlightCards = heroGanadorRes.coreCards; 
                 renderMesaCompleta(); 
             }
 
-            let txtGanador = ganador.esHero 
-                ? `¡Ganaste la mano con <strong>${ganador.nombreMano}</strong> y te llevaste el pozo de $${pot}! 🏆` 
-                : `¡El <strong>Oponente ${ganador.id}</strong> ganó con <strong>${ganador.nombreMano}</strong> y se lleva el pozo de $${pot}!`;
-            
-            document.getElementById('opponent-action').innerHTML = `<strong>SHOWDOWN FINAL:</strong> Se revelan todas las cartas. ${txtGanador}`;
+            let txtGanador = ganador.esHero ? `¡Ganaste la mano con <strong>${ganador.nombreMano}</strong> y te llevaste $${pot}! 🏆` : `¡El <strong>Oponente ${ganador.id}</strong> ganó con <strong>${ganador.nombreMano}</strong>!`;
+            document.getElementById('opponent-action').innerHTML = `<strong>SHOWDOWN:</strong> ${txtGanador}`;
         }
 
         function toggleExplanation() {
             let box = document.getElementById('explanation-box');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            
+            // Temporizador extendido de 1 minuto (60 segundos) para leer
+            if(box.style.display === 'block') {
+                let segundos = 60;
+                let intervalo = setInterval(() => {
+                    segundos--;
+                    if(segundos <= 0 || box.style.display === 'none') {
+                        clearInterval(intervalo);
+                        box.style.display = 'none';
+                    }
+                }, 1000);
+            }
         }
     </script>
 </body>
