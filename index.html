@@ -76,7 +76,7 @@
         }
 
         .opponents-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .opponent-seat { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 110px; text-align: center; border: 2px solid #444;}
+        .opponent-seat { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 115px; text-align: center; border: 2px solid #444;}
         .opponent-seat.folded-midgame { opacity: 0.3; border-color: var(--danger); }
         .border-green { border-color: var(--primary) !important; background: rgba(46, 204, 113, 0.1); }
         .border-red { border-color: var(--danger) !important; background: rgba(231, 76, 60, 0.1); opacity: 0.7;}
@@ -118,43 +118,43 @@
                 <span class="menu-icon">🧮</span> Práctica Asistida (HUD Matemático)
             </button>
             <button class="menu-btn" style="background: #2980b9; grid-column: span 2;" onclick="openView('view-online')">
-                <span class="menu-icon">🌐</span> Modo Competitivo con Amigos (Online 10k Stack)
+                <span class="menu-icon">🌐</span> Modo Competitivo Sincronizado (Online)
             </button>
         </div>
     </div>
 
-    <!-- LOBBY ONLINE CONECTADO -->
+    <!-- LOBBY ONLINE -->
     <div id="view-online" class="view">
         <div class="header-bar">
-            <h2>🌐 Sala Multijugador Online</h2>
+            <h2>🌐 Sala Multijugador Sincronizada</h2>
             <button class="btn btn-danger" onclick="openView('view-menu')">Volver al Menú</button>
         </div>
         <div class="config-box" id="online-lobby-menu">
             <h3 style="color:var(--primary);">Stack 10,000 | Ciegas 100 / 200</h3>
-            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos.</p>
+            <p style="color:#ccc; font-size:0.9rem;">Crea una sala o únete para competir con puntos en tiempo real.</p>
             <hr style="border-color:#444; margin: 20px 0;">
             
-            <input type="text" id="nombre-jugador" placeholder="Tu Nombre" style="margin-bottom: 10px; width: 80%;"><br>
+            <input type="text" id="nombre-jugador" placeholder="Tu Nombre de Jugador" style="margin-bottom: 10px; width: 80%;"><br>
             <button class="btn btn-primary" style="padding: 12px 30px;" onclick="crearSalaOnline()">Crear Nueva Sala Privada</button>
             
             <h4 style="margin: 15px 0;">O únete a una sala existente:</h4>
-            <input type="text" id="codigo-sala" placeholder="Código (ej. A7X9)" style="margin-bottom: 10px; width: 50%; text-transform: uppercase;"><br>
+            <input type="text" id="codigo-sala" placeholder="Código de la Sala (ej. A7X9)" style="margin-bottom: 10px; width: 50%; text-transform: uppercase;"><br>
             <button class="btn btn-accent" style="padding: 10px 20px;" onclick="unirseSalaOnline()">Unirse a la Mesa</button>
         </div>
 
-        <!-- SALA DE ESPERA (LOBBY INTERIOR) -->
+        <!-- SALA DE ESPERA INTERIOR -->
         <div id="online-waiting-room" class="config-box" style="display:none;">
             <h3>Código de Sala: <span id="lbl-room-code" style="color:var(--accent);">----</span></h3>
-            <p>Jugadores conectados en la mesa:</p>
+            <p>Jugadores conectados:</p>
             <ul id="online-players-list" style="list-style:none; padding:0; font-size:1.1rem; color:var(--primary);"></ul>
             <div id="host-controls" style="display:none; margin-top:20px;">
                 <button class="btn btn-primary" style="font-size:1.2rem; padding:12px 30px;" onclick="iniciarPartidaOnline()">¡Comenzar Sala!</button>
             </div>
-            <p id="waiting-host-msg" style="color:#f39c12; font-style:italic;">Esperando a que el anfitrión inicie la partida...</p>
+            <p id="waiting-host-msg" style="color:#f39c12; font-style:italic;">Esperando a que el creador inicie la partida...</p>
         </div>
     </div>
 
-    <!-- CONFIGURACIÓN DE MESA (PRÁCTICA LOCAL) -->
+    <!-- CONFIGURACIÓN DE MESA LOCAL -->
     <div id="view-config" class="view">
         <div class="header-bar">
             <h2 id="config-title">Configurar Partida</h2>
@@ -184,15 +184,14 @@
         </div>
     </div>
 
-    <!-- MESA REAL EN VIVO (COMPARTIDA LOCAL Y ONLINE) -->
-    <div id="view-game" class="view" style="max-width: 1100px;">
+    <!-- MESA REAL EN VIVO -->
+    <div id="view-game" class="view" style="max-width: 1050px;">
         <div class="header-bar">
             <h2 id="game-title">🃏 Mesa de Póker en Vivo</h2>
             <button class="btn btn-danger" onclick="openView('view-menu')">Menú Principal</button>
         </div>
 
         <div class="game-layout">
-            <!-- ÁREA PRINCIPAL DE JUEGO -->
             <div class="main-game-area">
                 <div class="math-hud" id="hud-panel">
                     <strong>🧮 Asistente HUD (Cálculo en Vivo):</strong><br>
@@ -213,7 +212,7 @@
                     <div style="font-size: 0.85rem; color: #ccc;">Cartas Comunitarias</div>
                     <div class="cards-container" id="board-cards"></div>
                     
-                    <div style="font-size: 0.85rem; color: #ccc; margin-top: 5px;">Tus Cartas (Hero) - Stack: <span id="hero-stack">10000</span></div>
+                    <div style="font-size: 0.85rem; color: #ccc; margin-top: 5px;">Tus Cartas (Hero)</div>
                     <div class="cards-container" id="hero-cards"></div>
                 </div>
 
@@ -247,21 +246,25 @@
                         <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
                         
-                        <!-- BOTÓN ESTOY LISTO PARA MODO ONLINE -->
+                        <!-- BOTÓN ESTOY LISTO Y CONTROL ANFITRIÓN -->
                         <button class="btn btn-primary" id="btn-estoy-listo" style="display:none; background:#8e44ad;" onclick="marcarListoOnline()">✅ ¡Estoy Listo!</button>
-                        <span id="ready-status-msg" style="color:#f39c12; font-weight:bold; display:none;">Esperando que todos estén listos...</span>
+                        <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Anfitrión) ➡️</button>
                     </div>
                     
+                    <div id="host-ready-status" style="margin-top:10px; font-size:0.9rem; color:#f39c12; display:none;">
+                        <strong>Estado de lectura:</strong> <span id="ready-counter">0/0 listos</span>
+                    </div>
+
                     <div class="explanation-box" id="explanation-box"></div>
                 </div>
             </div>
 
-            <!-- PANEL LATERAL DE RANKING EN VIVO (MODO ONLINE) -->
+            <!-- PANEL LATERAL DE RANKING DE PUNTOS ONLINE -->
             <div class="sidebar-ranking">
-                <h3 style="margin-top:0; color:var(--accent); font-size:1.1rem;">🏆 Ranking Online</h3>
-                <p style="font-size:0.8rem; color:#aaa;">Precisión y velocidad de la ronda:</p>
+                <h3 style="margin-top:0; color:var(--accent); font-size:1.1rem;">🏆 Ranking de Puntos</h3>
+                <p style="font-size:0.8rem; color:#aaa;">+100 por acierto | -50 por error:</p>
                 <div id="live-ranking-list" style="font-size:0.85rem;">
-                    <p style="color:#666; font-style:italic;">Esperando jugadas...</p>
+                    <p style="color:#666; font-style:italic;">Esperando respuestas...</p>
                 </div>
             </div>
         </div>
@@ -274,9 +277,10 @@
         let miNombreOnline = "";
         let miCodigoSala = "";
         let esModoOnline = false;
+        let esAnfitrionSala = false;
         let tiempoInicioMano = Date.now();
 
-        // 1. FUNCIONES MULTIJUGADOR ONLINE
+        // 1. FUNCIONES MULTIJUGADOR ONLINE Y SINCRONIZACIÓN
         function crearSalaOnline() {
             miNombreOnline = document.getElementById('nombre-jugador').value.trim();
             if(!miNombreOnline) return alert("Ingresá tu nombre.");
@@ -294,6 +298,7 @@
             socket.on('actualizarSalaOnline', (datos) => {
                 miCodigoSala = datos.codigoSala;
                 esModoOnline = true;
+                esAnfitrionSala = datos.esAnfitrion;
                 document.getElementById('online-lobby-menu').style.display = 'none';
                 document.getElementById('online-waiting-room').style.display = 'block';
                 document.getElementById('lbl-room-code').innerText = miCodigoSala;
@@ -304,7 +309,7 @@
                     lista.innerHTML += `<li>👤 ${j.nombre} (Stack: 10,000)</li>`;
                 });
 
-                if (datos.esAnfitrion) {
+                if (esAnfitrionSala) {
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('waiting-host-msg').style.display = 'none';
                 }
@@ -312,29 +317,42 @@
 
             socket.on('errorSala', (msg) => { alert(msg); });
 
-            socket.on('partidaIniciadaOnline', () => {
+            socket.on('sincronizarMano', (data) => {
                 openView('view-game');
+                mesa = data.mesaCompleta;
+                street = data.street;
+                hero = [mazo.pop(), mazo.pop()];
+                renderMesaCompleta();
+                tiempoInicioMano = Date.now();
+
+                if(esAnfitrionSala) {
+                    document.getElementById('btn-next-street-host').style.display = 'inline-block';
+                    document.getElementById('host-ready-status').style.display = 'block';
+                }
                 document.getElementById('btn-estoy-listo').style.display = 'inline-block';
-                iniciarPartidaDirecta(5); // Ciegas 100/200 implícitas
             });
 
-            socket.on('resultadoRankingJugador', (data) => {
+            socket.on('sincronizarCalle', (data) => {
+                street = data.street;
+                renderMesaCompleta();
+            });
+
+            socket.on('actualizarRankingGlobal', (data) => {
                 let rankingDiv = document.getElementById('live-ranking-list');
                 if(rankingDiv.innerHTML.includes("Esperando")) rankingDiv.innerHTML = "";
-                let colorAcc = data.acierto ? 'var(--primary)' : 'var(--danger)';
                 rankingDiv.innerHTML += `
-                    <div style="background:#222; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid ${colorAcc}">
+                    <div style="background:#222; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid var(--accent);">
                         <b>${data.nombre}</b><br>
-                        Outs: ${data.outs} | %: ${data.porcentaje}%<br>
+                        Puntos: <strong style="color:var(--primary);">+${data.puntosNuevos}</strong> (Total: ${data.puntajeTotal})<br>
                         ⏱️ ${data.tiempoSegundos}s
                     </div>
                 `;
             });
 
-            socket.on('avanzarSiguienteRonda', () => {
-                document.getElementById('ready-status-msg').style.display = 'none';
-                document.getElementById('btn-estoy-listo').style.display = 'inline-block';
-                iniciarMano();
+            socket.on('estadoListosActualizado', (data) => {
+                let total = data.jugadores.length;
+                let listos = data.jugadores.filter(j => j.listo).length;
+                document.getElementById('ready-counter').innerText = `${listos}/${total} listos`;
             });
         }
 
@@ -344,8 +362,12 @@
 
         function marcarListoOnline() {
             document.getElementById('btn-estoy-listo').style.display = 'none';
-            document.getElementById('ready-status-msg').style.display = 'inline-block';
             socket.emit('jugadorListo', { codigo: miCodigoSala });
+            alert("✅ Marcado como listo. Esperando al anfitrión para avanzar.");
+        }
+
+        function avanzarCalleHostOnline() {
+            socket.emit('avanzarCalleHost', miCodigoSala);
         }
 
         // 2. ESTADÍSTICAS Y LOCALSTORAGE
@@ -399,6 +421,8 @@
         function openModeConfig(modo) {
             esModoOnline = false;
             document.getElementById('btn-estoy-listo').style.display = 'none';
+            document.getElementById('btn-next-street-host').style.display = 'none';
+            document.getElementById('host-ready-status').style.display = 'none';
             modoActual = modo;
             if(modo === 'infinitas' || modo === 'hud') { iniciarPartidaDirecta(6); } 
             else { openView('view-config'); }
@@ -566,7 +590,7 @@
             document.getElementById('btn-explain').style.display = 'none';
             document.getElementById('result-message').innerText = '';
 
-            if(street === 1) { mesa = [mazo.pop(), mazo.pop(), mazo.pop()]; document.getElementById('street-name').innerText = "FLOP"; } 
+            if(street === 1) { mesa = [buildDeck().pop(), mazo.pop(), mazo.pop()]; document.getElementById('street-name').innerText = "FLOP"; } 
             else if(street === 2) { mesa.push(mazo.pop()); document.getElementById('street-name').innerText = "TURN"; } 
             else if(street === 3) { 
                 mesa.push(mazo.pop()); document.getElementById('street-name').innerText = "RIVER"; 
@@ -612,6 +636,10 @@
             userData.total++;
             let acierto = Math.abs(uOuts-correctOuts)<=1 && Math.abs(uProb-correctProb)<=4 && Math.abs(uOdds-correctOdds)<=4 && decision===realAction;
             
+            let aciertaOuts = Math.abs(uOuts - correctOuts) <= 1;
+            let aciertaProb = Math.abs(uProb - correctProb) <= 4;
+            let aciertaOdds = Math.abs(uOdds - correctOdds) <= 4;
+
             if(acierto) {
                 document.getElementById('result-message').innerHTML = "✅ ¡Cálculos perfectos!"; document.getElementById('result-message').style.color = "var(--primary)";
                 userData.aciertos++;
@@ -620,7 +648,7 @@
             }
             saveStats();
 
-            // Enviar al servidor si estamos online
+            // Enviar al servidor multijugador con puntaje (+100 / -50)
             if(esModoOnline && socket) {
                 socket.emit('enviarCalculoOnline', {
                     codigo: miCodigoSala,
@@ -629,7 +657,9 @@
                     porcentaje: uProb,
                     potOdds: uOdds,
                     tiempoSegundos: tiempoEmpleado,
-                    acierto: acierto
+                    aciertaOuts: aciertaOuts,
+                    aciertaProb: aciertaProb,
+                    aciertaOdds: aciertaOdds
                 });
             }
 
@@ -697,7 +727,7 @@
             let box = document.getElementById('explanation-box');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
             
-            // Temporizador extendido de 1 minuto (60 segundos) para leer
+            // Temporizador extendido de 1 minuto (60 segundos)
             if(box.style.display === 'block') {
                 let segundos = 60;
                 let intervalo = setInterval(() => {
