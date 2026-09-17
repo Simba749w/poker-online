@@ -13,6 +13,7 @@
             --danger: #e74c3c;
             --info: #3498db;
             --text: #ffffff;
+            --table-green: #143821;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,7 +24,7 @@
         }
         h1, h2, h3 { color: var(--accent); text-align: center; margin-top: 0;}
         
-        .view { display: none; width: 100%; max-width: 1050px; background: var(--bg-panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); box-sizing: border-box; }
+        .view { display: none; width: 100%; max-width: 1200px; background: var(--bg-panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); box-sizing: border-box; }
         .active-view { display: block; }
 
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
@@ -48,39 +49,33 @@
 
         .game-layout { display: flex; gap: 20px; }
         .main-game-area { flex: 3; }
-        .sidebar-ranking { display: none; flex: 1; background: #151515; border: 2px solid #333; border-radius: 10px; padding: 15px; height: fit-content; }
+        .sidebar-ranking { display: none; flex: 1.2; background: #151515; border: 2px solid #333; border-radius: 10px; padding: 15px; height: fit-content; }
 
-        .table-area { background: #143821; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px; border: 5px solid #6b3410; position: relative;}
-        .cards-container { display: flex; justify-content: center; gap: 8px; margin: 10px 0; min-height: 65px; }
-        
-        .card { 
-            width: 42px; height: 62px; background: white; border-radius: 5px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 1.2rem; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            transition: 0.2s;
+        /* DISEÑO MESA OVALADA (NUEVO) */
+        .poker-table-container {
+            position: relative; width: 100%; max-width: 850px; height: 500px; margin: 30px auto;
+            background: radial-gradient(ellipse at center, var(--table-green) 0%, #0a2010 100%);
+            border: 15px solid #5c3a21; border-radius: 400px / 220px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
         }
+        .seat {
+            position: absolute; width: 110px; padding: 8px; background: rgba(0,0,0,0.8); 
+            border: 2px solid #444; border-radius: 8px; text-align: center; font-size: 0.85rem;
+            transform: translate(-50%, -50%); transition: all 0.5s ease; z-index: 5;
+        }
+        
+        /* CÓDIGO DE COLORES SHOWDOWN */
+        .fold-red { border-color: var(--danger) !important; opacity: 0.5; }
+        .win-green { border-color: var(--primary) !important; box-shadow: 0 0 15px var(--primary); transform: translate(-50%, -50%) scale(1.1); z-index: 10; background: rgba(46, 204, 113, 0.15);}
+        .lose-yellow { border-color: #f1c40f !important; }
+
+        .cards-container { display: flex; justify-content: center; gap: 4px; margin: 5px 0; min-height: 65px; }
+        .card { width: 42px; height: 62px; background: white; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         .red { color: #d63031; } .black { color: #2d3436; }
-        
-        .card-back {
-            background-color: #111;
-            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.15) 0, rgba(255,255,255,0.15) 2px, transparent 0, transparent 6px);
-            border: 2px solid #333;
-            color: transparent;
-        }
+        .card-back { background-color: #111; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.15) 0, rgba(255,255,255,0.15) 2px, transparent 0, transparent 6px); color: transparent; }
+        .highlight-yellow { border: 3px solid #f1c40f !important; box-shadow: 0 0 12px rgba(241, 196, 15, 0.9); transform: scale(1.1); z-index: 10; }
 
-        .highlight-yellow {
-            border: 3px solid #f1c40f !important;
-            box-shadow: 0 0 12px rgba(241, 196, 15, 0.9);
-            transform: scale(1.1);
-            z-index: 10;
-        }
-
-        .opponents-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .opponent-seat { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 110px; text-align: center; border: 2px solid #444;}
-        .opponent-seat.folded-midgame { opacity: 0.3; border-color: var(--danger); }
-        .border-green { border-color: var(--primary) !important; background: rgba(46, 204, 113, 0.1); }
-        .border-red { border-color: var(--danger) !important; background: rgba(231, 76, 60, 0.1); opacity: 0.7;}
-        
         .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 2px;}
         .badge-d { background: #e67e22; color: white; }
         .badge-sb { background: #9b59b6; color: white; }
@@ -96,6 +91,14 @@
 
         .explanation-box { display: none; background: rgba(52, 152, 219, 0.2); border-left: 5px solid var(--info); padding: 15px; margin-top: 15px; border-radius: 0 5px 5px 0; text-align: left; line-height: 1.6; font-size: 0.95rem; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;}
+        
+        /* TABLAS RANKING ONLINE */
+        .ranking-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .ranking-table th, .ranking-table td { border: 1px solid #444; padding: 6px; text-align: center; }
+        .ranking-table th { background: #222; color: var(--accent); }
+        .tick { color: var(--primary); font-weight: bold; font-size: 1.1rem; }
+        .cross { color: var(--danger); font-weight: bold; font-size: 1.1rem; }
+        .timer-display { font-size: 1.2rem; color: var(--accent); font-weight: bold; text-align: right; display: none;}
     </style>
 </head>
 <body>
@@ -131,24 +134,19 @@
         </div>
         <div class="config-box" id="online-lobby-menu">
             <h3 style="color:var(--primary);">Stack 10,000 | Ciegas 100 / 200</h3>
-            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos (máximo 9 jugadores).</p>
+            <p style="color:#ccc; font-size:0.9rem;">Crea una mesa privada o únete con el código de tus amigos (máx 9 jugadores).</p>
             <hr style="border-color:#444; margin: 20px 0;">
-            
             <input type="text" id="nombre-jugador" placeholder="Tu Nombre" style="margin-bottom: 10px; width: 80%;"><br>
             <button class="btn btn-primary" style="padding: 12px 30px;" onclick="crearSalaOnline()">Crear Nueva Sala Privada</button>
-            
             <h4 style="margin: 15px 0;">O únete a una sala existente:</h4>
             <input type="text" id="codigo-sala" placeholder="Código (ej. A7X9)" style="margin-bottom: 10px; width: 50%; text-transform: uppercase;"><br>
             <button class="btn btn-accent" style="padding: 10px 20px;" onclick="unirseSalaOnline()">Unirse a la Mesa</button>
         </div>
 
-        <!-- SALA DE ESPERA (LOBBY INTERIOR) -->
         <div id="online-waiting-room" class="config-box" style="display:none;">
             <h3>Código de Sala: <span id="lbl-room-code" style="color:var(--accent);">----</span></h3>
             <p>Jugadores conectados en la mesa:</p>
             <ul id="online-players-list" style="list-style:none; padding:0; font-size:1.1rem; color:var(--primary);"></ul>
-            
-            <!-- CONTROLES DEL ANFITRIÓN (CORREGIDOS PARA APARECER AL LÍDER) -->
             <div id="host-controls" style="display:none; margin-top:20px;">
                 <button class="btn btn-primary" style="font-size:1.2rem; padding:12px 30px;" onclick="iniciarPartidaOnline()">¡Comenzar Sala!</button>
             </div>
@@ -167,8 +165,8 @@
             <select id="select-players">
                 <option value="2">Heads-up (2 jugadores)</option>
                 <option value="3">3 Jugadores</option>
-                <option value="5" selected>6 Jugadores (Mesa Estándar)</option>
-                <option value="8">9 Jugadores (Mesa Completa)</option>
+                <option value="6" selected>6 Jugadores (Mesa Estándar)</option>
+                <option value="9">9 Jugadores (Mesa Completa)</option>
             </select><br><br>
             <button class="btn btn-primary" style="font-size: 1.2rem; padding: 12px 30px;" onclick="iniciarPartidaConfigurada()">¡Sentarse en la Mesa!</button>
         </div>
@@ -186,11 +184,12 @@
         </div>
     </div>
 
-    <!-- MESA REAL EN VIVO -->
-    <div id="view-game" class="view" style="max-width: 1100px;">
+    <!-- MESA REAL EN VIVO (PARA TODOS LOS MODOS) -->
+    <div id="view-game" class="view" style="max-width: 1150px;">
         <div class="header-bar">
             <h2 id="game-title">🃏 Mesa de Póker en Vivo</h2>
-            <button class="btn btn-danger" onclick="openView('view-menu')">Menú Principal</button>
+            <div id="timer-display" class="timer-display">Tiempo: 30s</div>
+            <button class="btn btn-danger" onclick="openView('view-menu'); stopTimer();">Menú Principal</button>
         </div>
 
         <div class="game-layout">
@@ -202,27 +201,29 @@
                     • Pot Odds: <span id="hud-odds">0%</span>
                 </div>
 
-                <div class="opponents-grid" id="opponents-container"></div>
-
-                <div class="table-area">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                        <span id="hero-badge"></span>
-                        <h3 id="street-name" style="color: var(--accent); margin: 0;">PRE-FLOP</h3>
-                        <span style="color: var(--primary); font-weight: bold;">Pozo: $<span id="pot-size">0</span></span>
+                <!-- MESA OVALADA -->
+                <div class="poker-table-container" id="poker-table-container">
+                    <div style="text-align:center; z-index: 2; position: relative;">
+                        <h3 id="street-name" style="color: var(--accent); margin: 0; text-shadow: 2px 2px 4px #000;">PRE-FLOP</h3>
+                        <span style="color: var(--primary); font-weight: bold; text-shadow: 1px 1px 2px #000;">Pozo: $<span id="pot-size">0</span></span>
+                        <div class="cards-container" id="board-cards" style="margin-top:10px;"></div>
                     </div>
-                    
-                    <div style="font-size: 0.85rem; color: #ccc;">Cartas Comunitarias</div>
-                    <div class="cards-container" id="board-cards"></div>
-                    
-                    <div style="font-size: 0.85rem; color: #ccc; margin-top: 5px;">Tus Cartas (Hero) - Stack: <span id="hero-stack">10000</span></div>
-                    <div class="cards-container" id="hero-cards"></div>
+                    <!-- Asientos dinámicos por JS -->
+                    <div id="poker-table-seats"></div>
                 </div>
 
                 <div id="action-panel" style="background: #222; padding: 15px; border-radius: 8px;">
-                    <p id="opponent-action" style="color: var(--info); font-weight: bold; font-size: 0.95rem;"></p>
+                    <p id="opponent-action" style="color: var(--info); font-weight: bold; font-size: 0.95rem; text-align: center;"></p>
                     
+                    <!-- FASE ONLINE: REPARTO -->
+                    <div id="online-preflop-actions" style="display:none; text-align:center;">
+                        <h4 style="color:var(--accent); margin-top:0;">Tus cartas (30 Segundos):</h4>
+                        <button class="btn btn-primary" onclick="marcarListoOnline('call')">VOY (Call/Raise) ✅</button>
+                        <button class="btn btn-danger" onclick="marcarListoOnline('fold')">ME RETIRO (Fold) ❌</button>
+                    </div>
+
                     <div class="math-input-box" id="question-panel">
-                        <h4 style="margin:0 0 10px 0; color:var(--accent);">Calculá tu jugada (1 Minuto):</h4>
+                        <h4 style="margin:0 0 10px 0; color:var(--accent);">Calculá tu jugada:</h4>
                         <div class="input-group">
                             <label>• ¿Cuántos <strong>Outs</strong> tenés?: </label>
                             <input type="number" id="input-outs" placeholder="Ej: 9">
@@ -236,23 +237,22 @@
                             <input type="number" id="input-odds" placeholder="Ej: 25">
                         </div>
                         <div style="margin-top: 15px;">
-                            <button class="btn btn-primary" onclick="submitAnswer('call')">PAGAR (Call)</button>
-                            <button class="btn btn-danger" onclick="submitAnswer('fold')">TIRARSE (Fold)</button>
+                            <button class="btn btn-primary" onclick="submitAnswer('call')">PAGAR (Call) / ENVIAR</button>
+                            <button class="btn btn-danger" id="btn-fold-local" onclick="submitAnswer('fold')">TIRARSE (Fold)</button>
                         </div>
                     </div>
                     
-                    <div id="result-message" style="margin-top: 10px; font-weight: bold; font-size: 1.05rem;"></div>
+                    <div id="result-message" style="margin-top: 10px; font-weight: bold; font-size: 1.05rem; text-align:center;"></div>
                     
-                    <div style="margin-top: 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <button class="btn btn-accent" id="btn-explain" style="display: none;" onclick="toggleExplanation()">💡 Explícame con Significado Detallado</button>
-                        <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar de Calle ➡️</button>
+                    <div style="margin-top: 10px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;">
+                        <button class="btn btn-accent" id="btn-explain" style="display: none;" onclick="toggleExplanation()">💡 Ver Explicación</button>
+                        <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarMano()">Siguiente Mano 🃏</button>
                         
-                        <button class="btn btn-primary" id="btn-estoy-listo" style="display:none; background:#8e44ad;" onclick="marcarListoOnline()">✅ ¡Estoy Listo!</button>
                         <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 👑) ➡️</button>
                     </div>
 
-                    <div id="host-ready-status" style="margin-top:10px; font-size:0.9rem; color:#f39c12; display:none;">
+                    <div id="host-ready-status" style="margin-top:10px; font-size:0.9rem; color:#f39c12; display:none; text-align:center;">
                         <strong>Estado de la mesa:</strong> <span id="ready-counter">0/0 listos</span>
                     </div>
                     
@@ -260,26 +260,32 @@
                 </div>
             </div>
 
-            <!-- PANEL LATERAL DE RANKING EN VIVO -->
+            <!-- PANEL LATERAL DE RANKING (SOLO ONLINE) -->
             <div class="sidebar-ranking" id="sidebar-ranking-box">
-                <h3 style="margin-top:0; color:var(--accent); font-size:1.1rem;">🏆 Ranking Online</h3>
-                <p style="font-size:0.8rem; color:#aaa;">Precisión y velocidad de la ronda:</p>
-                <div id="live-ranking-list" style="font-size:0.85rem;">
-                    <p style="color:#666; font-style:italic;">Esperando jugadas...</p>
-                </div>
+                <h3 style="margin-top:0; color:var(--accent);">📊 Detalle de Ronda</h3>
+                <table class="ranking-table">
+                    <thead><tr><th>Jugador</th><th>Outs</th><th>%</th><th>Odds</th><th>Seg</th></tr></thead>
+                    <tbody id="tbody-ronda"></tbody>
+                </table>
+                <h3 style="margin-top:20px; color:var(--accent);">🏆 Puntaje General</h3>
+                <table class="ranking-table">
+                    <thead><tr><th>Jugador</th><th>Puntos</th></tr></thead>
+                    <tbody id="tbody-general"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT DE SOCKET.IO Y MOTOR DEL JUEGO -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // ==========================================
+        // 1. LÓGICA DE RED Y ONLINE
+        // ==========================================
         const socket = typeof io !== 'undefined' ? io() : null;
-        let miNombreOnline = "";
-        let miCodigoSala = "";
-        let esModoOnline = false;
-        let esAnfitrionSala = false;
-        let tiempoInicioMano = Date.now();
+        let miNombreOnline = "", miCodigoSala = "";
+        let esModoOnline = false, esAnfitrionSala = false;
+        let timerRonda = null, tiempoInicioMano = Date.now();
+        let rankingDataGlobal = [];
 
         function crearSalaOnline() {
             miNombreOnline = document.getElementById('nombre-jugador').value.trim();
@@ -298,7 +304,7 @@
             socket.on('actualizarSalaOnline', (datos) => {
                 miCodigoSala = datos.codigoSala;
                 esModoOnline = true;
-                esAnfitrionSala = datos.esAnfitrion; // 👑 AQUÍ SE CAPTURA CORRECTAMENTE SI SOS EL LÍDER
+                esAnfitrionSala = datos.esAnfitrion; // 👑 CAPTURA CORRECTA DEL LÍDER
                 
                 document.getElementById('online-lobby-menu').style.display = 'none';
                 document.getElementById('online-waiting-room').style.display = 'block';
@@ -311,7 +317,6 @@
                     lista.innerHTML += `<li>👤 ${j.nombre}${etiquetaLider} - Stack: 10,000</li>`;
                 });
 
-                // 👑 AQUÍ SE MUESTRA EL BOTÓN DE INICIO SI SOS EL LÍDER
                 if (esAnfitrionSala) {
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('waiting-host-msg').style.display = 'none';
@@ -323,43 +328,48 @@
 
             socket.on('errorSala', (msg) => { alert(msg); });
 
-            socket.on('partidaIniciadaOnline', () => {
+            socket.on('partidaIniciadaOnline', (data) => {
                 esModoOnline = true;
+                totalJugadores = document.querySelectorAll('#online-players-list li').length; // max 9
+                dealerPos = data.dealerIndex || 0;
+                
                 document.getElementById('sidebar-ranking-box').style.display = 'block';
+                document.getElementById('timer-display').style.display = 'block';
+                document.getElementById('btn-fold-local').style.display = 'none'; // online fold es en preflop
+                
                 openView('view-game');
-                iniciarPartidaDirecta(5);
-                if(esAnfitrionSala) {
-                    document.getElementById('btn-next-street-host').style.display = 'inline-block';
-                    document.getElementById('host-ready-status').style.display = 'block';
-                } else {
-                    document.getElementById('btn-next-street-host').style.display = 'none';
-                    document.getElementById('host-ready-status').style.display = 'none';
-                }
-                document.getElementById('btn-estoy-listo').style.display = 'inline-block';
+                iniciarMano(); // Usa la lógica general
             });
 
             socket.on('resultadoRankingJugador', (data) => {
-                let rankingDiv = document.getElementById('live-ranking-list');
-                if(rankingDiv.innerHTML.includes("Esperando")) rankingDiv.innerHTML = "";
-                let colorAcc = data.acierto ? 'var(--primary)' : 'var(--danger)';
-                rankingDiv.innerHTML += `
-                    <div style="background:#222; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid ${colorAcc}">
-                        <b>${data.nombre}</b><br>
-                        Outs: ${data.outs} | %: ${data.porcentaje}%<br>
-                        ⏱️ ${data.tiempoSegundos}s
-                    </div>
-                `;
+                rankingDataGlobal.push(data);
+                rankingDataGlobal.sort((a,b) => a.tiempoSegundos - b.tiempoSegundos); // Velocidad
+                
+                // Aplicar bonus escalonado: 1ro 75, 2do -15%, 3ro -15%, etc.
+                let bonusBase = 75;
+                rankingDataGlobal.forEach((d, index) => {
+                    d.bonusVelocidad = Math.round(bonusBase * Math.pow(0.85, index));
+                });
+                renderizarTablasOnline();
             });
 
             socket.on('avanzarSiguienteRonda', () => {
-                document.getElementById('btn-estoy-listo').style.display = 'inline-block';
-                iniciarMano();
+                rankingDataGlobal = [];
+                renderizarTablasOnline();
+                nextStreet();
             });
 
             socket.on('estadoListosActualizado', (data) => {
                 let total = data.jugadores.length;
                 let listos = data.jugadores.filter(j => j.listo).length;
                 document.getElementById('ready-counter').innerText = `${listos}/${total} listos`;
+                
+                // Actualizar folds en vivo en la UI
+                data.jugadores.forEach((jSrv) => {
+                    let jLocal = jugadoresMesa.find(jl => jl.nombre === jSrv.nombre || jl.id === jSrv.id);
+                    if(jLocal && !jSrv.activo) jLocal.activo = false;
+                });
+                renderMesaCompleta(); // Refresca colores
             });
         }
 
@@ -368,40 +378,44 @@
             socket.emit('iniciarPartidaOnline', miCodigoSala);
         }
 
-        function marcarListoOnline() {
-            document.getElementById('btn-estoy-listo').style.display = 'none';
-            socket.emit('jugadorListo', { codigo: miCodigoSala });
-            alert("✅ Marcado como listo. Esperando al líder (👑) para avanzar.");
+        function marcarListoOnline(accion) {
+            document.getElementById('online-preflop-actions').style.display = 'none';
+            document.getElementById('timer-display').innerText = "Esperando resto...";
+            socket.emit('jugadorListo', { codigo: miCodigoSala, accion: accion });
+            stopTimer();
         }
 
         function avanzarCalleHostOnline() {
             socket.emit('avanzarCalleHost', miCodigoSala);
-            nextStreet();
         }
 
-        setTimeout(() => {
-            if(esModoOnline && document.getElementById('btn-estoy-listo').style.display !== 'none') {
-                marcarListoOnline();
-            }
-        }, 30000);
+        function renderizarTablasOnline() {
+            let tr1 = "", tr2 = "";
+            rankingDataGlobal.forEach((d, i) => {
+                let tickOuts = d.outsOk ? '<span class="tick">✔️</span>' : '<span class="cross">❌</span>';
+                let tickProb = d.probOk ? '<span class="tick">✔️</span>' : '<span class="cross">❌</span>';
+                let tickOdds = d.oddsOk ? '<span class="tick">✔️</span>' : '<span class="cross">❌</span>';
 
-        let userData = { total: 0, aciertos: 0, racha: 0, mejorRacha: 0 };
-        try {
-            let stored = localStorage.getItem('pokerStatsV6');
-            if (stored) userData = JSON.parse(stored);
-        } catch(e) {}
-
-        function saveStats() { 
-            try { localStorage.setItem('pokerStatsV6', JSON.stringify(userData)); } catch(e) {}
+                tr1 += `<tr><td>${d.nombre}</td><td>${d.outs} ${tickOuts}</td><td>${d.porcentaje} ${tickProb}</td><td>${d.potOdds} ${tickOdds}</td><td>${d.tiempoSegundos}s</td></tr>`;
+                tr2 += `<tr><td>${d.nombre} ${i===0?'🏎️':''}</td><td>${d.puntajeTotal} (+${d.bonusVelocidad})</td></tr>`;
+            });
+            document.getElementById('tbody-ronda').innerHTML = tr1;
+            document.getElementById('tbody-general').innerHTML = tr2;
         }
+
+        // ==========================================
+        // 2. MOTOR DEL JUEGO (CARTAS Y EVALUACIÓN)
+        // ==========================================
+        let userData = { total: 0, aciertos: 0 };
+        try { let stored = localStorage.getItem('pokerStatsV7'); if (stored) userData = JSON.parse(stored); } catch(e) {}
+        function saveStats() { try { localStorage.setItem('pokerStatsV7', JSON.stringify(userData)); } catch(e) {} }
 
         const palos = [{s:'♥',c:'red'}, {s:'♦',c:'red'}, {s:'♣',c:'black'}, {s:'♠',c:'black'}];
         const valoresMap = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14};
         let mazo = [], mesa = [], hero = [], jugadoresMesa = [];
         let pot = 300, apuestaActual = 200, street = 0, totalJugadores = 6, dealerPos = 0, modoActual = '';
         let correctOuts = 0, correctProb = 0, correctOdds = 0, realAction = '';
-        let isShowdown = false;
-        let highlightCards = [];
+        let isShowdown = false, highlightCards = [];
 
         function buildDeck() {
             mazo = [];
@@ -434,9 +448,8 @@
         function openModeConfig(modo) {
             esModoOnline = false;
             document.getElementById('sidebar-ranking-box').style.display = 'none';
-            document.getElementById('btn-estoy-listo').style.display = 'none';
-            document.getElementById('btn-next-street-host').style.display = 'none';
-            document.getElementById('host-ready-status').style.display = 'none';
+            document.getElementById('timer-display').style.display = 'none';
+            document.getElementById('btn-fold-local').style.display = 'inline-block';
             modoActual = modo;
             if(modo === 'infinitas' || modo === 'hud') { iniciarPartidaDirecta(6); } 
             else { openView('view-config'); }
@@ -455,67 +468,9 @@
             iniciarMano();
         }
 
-        function getCombinations(array, k) {
-            let result = [];
-            function combine(temp, start) {
-                if (temp.length === k) { result.push([...temp]); return; }
-                for (let i = start; i < array.length; i++) {
-                    temp.push(array[i]);
-                    combine(temp, i + 1);
-                    temp.pop();
-                }
-            }
-            combine([], 0);
-            return result;
-        }
-
-        function evaluarMejorMano(cartasJugador, cartasComunitarias) {
-            let todas = cartasJugador.concat(cartasComunitarias);
-            if(todas.length < 5) return { score: 0, nombre: "En progreso", cartas: [], coreCards: [] };
-            let mejoresCombinaciones = [];
-            getCombinations(todas, 5).forEach(combo => mejoresCombinaciones.push(puntuarCincoCartas(combo)));
-            mejoresCombinaciones.sort((a, b) => b.score - a.score);
-            return mejoresCombinaciones[0]; 
-        }
-
-        function puntuarCincoCartas(cartasOriginales) {
-            let cartas = [...cartasOriginales].sort((a, b) => b.val - a.val);
-            let vals = cartas.map(c => c.val);
-            let palos = cartas.map(c => c.p);
-            let esColor = palos.every(p => p === palos[0]);
-            let esEscalera = (vals[0] - vals[1] === 1 && vals[1] - vals[2] === 1 && vals[2] - vals[3] === 1 && vals[3] - vals[4] === 1);
-            let esEscaleraBaja = (vals[0] === 14 && vals[1] === 5 && vals[2] === 4 && vals[3] === 3 && vals[4] === 2);
-            if (esEscaleraBaja) esEscalera = true;
-
-            let conteo = {};
-            cartas.forEach(c => conteo[c.val] = (conteo[c.val] || 0) + 1);
-            let uniqueVals = Object.keys(conteo).map(Number).sort((a, b) => conteo[b] !== conteo[a] ? conteo[b] - conteo[a] : b - a);
-
-            let kickerScore = 0, orderedValues = [];
-            uniqueVals.forEach(v => { for(let i=0; i<conteo[v]; i++) orderedValues.push(v); });
-            if(esEscaleraBaja) orderedValues = [5, 4, 3, 2, 1];
-            for(let i=0; i<5; i++) kickerScore += orderedValues[i] * Math.pow(15, 4-i);
-
-            let isQuad = conteo[uniqueVals[0]] === 4;
-            let isTrip = conteo[uniqueVals[0]] === 3;
-            let isPair = conteo[uniqueVals[0]] === 2;
-            let isTwoPair = isPair && conteo[uniqueVals[1]] === 2;
-            let isFullHouse = isTrip && conteo[uniqueVals[1]] === 2;
-
-            let score = 0, nombre = "", coreCards = [];
-            if (esColor && esEscalera) { score = 80000000 + kickerScore; nombre = "Escalera de Color"; coreCards = cartas; }
-            else if (isQuad) { score = 70000000 + kickerScore; nombre = "Póker"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
-            else if (isFullHouse) { score = 60000000 + kickerScore; nombre = "Full House"; coreCards = cartas; }
-            else if (esColor) { score = 50000000 + kickerScore; nombre = "Color"; coreCards = cartas; }
-            else if (esEscalera) { score = 40000000 + kickerScore; nombre = "Escalera"; coreCards = cartas; }
-            else if (isTrip) { score = 30000000 + kickerScore; nombre = "Trío"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
-            else if (isTwoPair) { score = 20000000 + kickerScore; nombre = "Doble Par"; coreCards = cartas.filter(c => c.val === uniqueVals[0] || c.val === uniqueVals[1]); }
-            else if (isPair) { score = 10000000 + kickerScore; nombre = "Par"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
-            else { score = kickerScore; nombre = `Carta Alta (${cartas[0].v})`; coreCards = []; } 
-
-            return { score, nombre, cartas, coreCards };
-        }
-
+        // ==========================================
+        // 3. CICLO DE MANO Y RENDERIZADO OVALADO
+        // ==========================================
         function iniciarMano() {
             buildDeck();
             mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()];
@@ -532,62 +487,149 @@
 
             for(let i = 0; i < totalJugadores; i++) {
                 let rol = i === dealerPos ? 'D' : i === sbPos ? 'SB' : i === bbPos ? 'BB' : '';
-                if(i === 0) jugadoresMesa.push({ id: 0, esHero: true, rol: rol, activo: true, cartas: hero });
-                else jugadoresMesa.push({ id: i, esHero: false, rol: rol, activo: true, cartas: [mazo.pop(), mazo.pop()], accion: "En mano" });
+                if(i === 0) {
+                    jugadoresMesa.push({ id: 0, nombre: esModoOnline ? miNombreOnline : 'Tú (Hero)', esHero: true, rol: rol, activo: true, cartas: hero, fichas: 10000 });
+                } else {
+                    jugadoresMesa.push({ id: i, nombre: `Jugador ${i}`, esHero: false, rol: rol, activo: true, cartas: [mazo.pop(), mazo.pop()], fichas: 10000 });
+                }
             }
 
             renderMesaCompleta();
             document.getElementById('question-panel').style.display = 'none';
-            document.getElementById('btn-next-street').style.display = 'inline-block';
+            document.getElementById('btn-next-street').style.display = esModoOnline ? 'none' : 'inline-block';
             document.getElementById('btn-next-hand').style.display = 'none';
             document.getElementById('btn-explain').style.display = 'none';
             document.getElementById('explanation-box').style.display = 'none';
             document.getElementById('result-message').innerText = '';
             document.getElementById('street-name').innerText = "PRE-FLOP";
-            document.getElementById('opponent-action').innerText = "Ciegas 100/200 colocadas. Repartiendo cartas.";
+            document.getElementById('opponent-action').innerText = "Ciegas 100/200 colocadas.";
+            
+            // UI Específica
+            if(esModoOnline) {
+                document.getElementById('online-preflop-actions').style.display = 'block';
+                if(esAnfitrionSala) document.getElementById('host-ready-status').style.display = 'block';
+                iniciarTimer(30, () => marcarListoOnline('call')); // 30s autolisto
+            } else {
+                document.getElementById('online-preflop-actions').style.display = 'none';
+            }
+
             dealerPos = (dealerPos + 1) % totalJugadores;
         }
 
         function renderMesaCompleta() {
-            if(street > 0 && mesa.length > 0) {
+            if(street > 0 && street < 4) {
                 let cartasActuales = street === 1 ? [mesa[0], mesa[1], mesa[2]] : street === 2 ? [mesa[0], mesa[1], mesa[2], mesa[3]] : mesa;
                 let heroHandEvaluated = evaluarMejorMano(hero, cartasActuales);
                 highlightCards = heroHandEvaluated.coreCards;
             }
 
             document.getElementById('pot-size').innerText = pot;
-            document.getElementById('hero-cards').innerHTML = renderCard(hero[0]) + renderCard(hero[1]);
-
+            
             let cartasVisiblesHTML = '';
-            if(street === 0) {
-                cartasVisiblesHTML = '<span style="color:#aaa; font-style:italic;">Esperando Flop...</span>';
-            } else if(street === 1) {
-                cartasVisiblesHTML = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]);
-            } else if(street === 2) {
-                cartasVisiblesHTML = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]) + renderCard(mesa[3]);
-            } else {
-                cartasVisiblesHTML = mesa.map(c => renderCard(c)).join('');
-            }
+            if(street === 0) cartasVisiblesHTML = '<span style="color:#aaa; font-style:italic;">Esperando Flop...</span>';
+            else if(street === 1) cartasVisiblesHTML = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]);
+            else if(street === 2) cartasVisiblesHTML = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]) + renderCard(mesa[3]);
+            else cartasVisiblesHTML = mesa.map(c => renderCard(c)).join('');
             document.getElementById('board-cards').innerHTML = cartasVisiblesHTML;
 
-            let heroObj = jugadoresMesa.find(j => j.esHero);
-            let badgeHtml = heroObj.rol === 'D' ? '<span class="badge badge-d">DEALER (D)</span>' : heroObj.rol === 'SB' ? '<span class="badge badge-sb">SMALL BLIND</span>' : heroObj.rol === 'BB' ? '<span class="badge badge-bb">BIG BLIND</span>' : '';
-            document.getElementById('hero-badge').innerHTML = badgeHtml;
+            // DIBUJAR ASIENTOS (Mesa Redonda)
+            const container = document.getElementById('poker-table-seats');
+            container.innerHTML = '';
+            const total = jugadoresMesa.length;
+            const rx = 340, ry = 190; // Radios elipse adaptados a la UI
+            const centroX = document.getElementById('poker-table-container').offsetWidth / 2;
+            const centroY = document.getElementById('poker-table-container').offsetHeight / 2;
 
-            if(!isShowdown) {
-                let htmlOpps = '';
-                jugadoresMesa.forEach((j) => {
-                    if(j.esHero) return;
-                    let bBadge = j.rol ? `<span class="badge badge-${j.rol.toLowerCase()}">${j.rol}</span>` : '';
-                    htmlOpps += `<div class="opponent-seat ${j.activo ? '' : 'folded-midgame'}">
-                        ${bBadge}<strong>Oponente ${j.id}</strong><br>
-                        ${j.activo ? renderCard(j.cartas[0], true) + renderCard(j.cartas[1], true) : '<small style="color:var(--danger)">FOLD</small>'}<br>
-                        <small style="color:var(--accent);">${j.accion || 'En mano'}</small>
-                    </div>`;
-                });
-                document.getElementById('opponents-container').innerHTML = htmlOpps;
-                if(modoActual === 'hud' && street > 0 && street < 3) actualizarHUDMatematico();
+            jugadoresMesa.forEach((j, index) => {
+                let posRelativa = (index - dealerPos + total) % total;
+                let angulo = (posRelativa / total) * 2 * Math.PI + Math.PI/2; // Hero abajo
+                
+                let x = centroX + rx * Math.cos(angulo);
+                let y = centroY + ry * Math.sin(angulo);
+
+                let badge = j.rol ? `<span class="badge badge-${j.rol.toLowerCase()}">${j.rol}</span><br>` : '';
+                
+                // Colores para el Showdown
+                let extraClass = "";
+                if (!j.activo) extraClass = "fold-red";
+                else if (isShowdown) extraClass = j.esGanador ? "win-green" : "lose-yellow";
+
+                let div = document.createElement('div');
+                div.className = `seat ${extraClass}`;
+                div.style.left = `${x}px`;
+                div.style.top = `${y}px`;
+                div.innerHTML = `${badge}<strong style="color:${j.activo?'#fff':'#888'}">${j.nombre}</strong><br><small>$${j.fichas}</small>`;
+                
+                // Mostrar Cartas
+                if (j.esHero && street < 4) {
+                    div.innerHTML += `<div class="cards-container">${renderCard(j.cartas[0])}${renderCard(j.cartas[1])}</div>`;
+                } else if (j.activo && street < 4) {
+                    div.innerHTML += `<div class="cards-container">${renderCard({}, true)}${renderCard({}, true)}</div>`;
+                } else if (isShowdown && j.activo) {
+                    div.innerHTML += `<div class="cards-container">${renderCard(j.cartas[0])}${renderCard(j.cartas[1])}</div>`;
+                    if(j.nombreMano) div.innerHTML += `<small style="color:var(--accent); font-weight:bold;">${j.nombreMano}</small>`;
+                } else if (isShowdown && !j.activo) { // Mostrar rojo opaco
+                    div.innerHTML += `<div class="cards-container" style="opacity:0.6;">${renderCard(j.cartas[0])}${renderCard(j.cartas[1])}</div><small style="color:var(--danger)">FOLD</small>`;
+                }
+
+                container.appendChild(div);
+            });
+
+            if(!isShowdown && modoActual === 'hud' && street > 0 && street < 3) actualizarHUDMatematico();
+        }
+
+        // ==========================================
+        // 4. LÓGICA MATEMÁTICA Y EVALUACIÓN
+        // ==========================================
+        function getCombinations(array, k) {
+            let result = [];
+            function combine(temp, start) {
+                if (temp.length === k) { result.push([...temp]); return; }
+                for (let i = start; i < array.length; i++) { temp.push(array[i]); combine(temp, i + 1); temp.pop(); }
             }
+            combine([], 0); return result;
+        }
+
+        function evaluarMejorMano(cartasJugador, cartasComunitarias) {
+            let todas = cartasJugador.concat(cartasComunitarias);
+            if(todas.length < 5) return { score: 0, nombre: "En progreso", cartas: [], coreCards: [] };
+            let mejoresCombinaciones = [];
+            getCombinations(todas, 5).forEach(combo => mejoresCombinaciones.push(puntuarCincoCartas(combo)));
+            mejoresCombinaciones.sort((a, b) => b.score - a.score);
+            return mejoresCombinaciones[0]; 
+        }
+
+        function puntuarCincoCartas(cOriginales) {
+            let cartas = [...cOriginales].sort((a, b) => b.val - a.val);
+            let vals = cartas.map(c => c.val), palos = cartas.map(c => c.p);
+            let esColor = palos.every(p => p === palos[0]);
+            let esEscalera = (vals[0]-vals[1]===1 && vals[1]-vals[2]===1 && vals[2]-vals[3]===1 && vals[3]-vals[4]===1);
+            let esEscB = (vals[0]===14 && vals[1]===5 && vals[2]===4 && vals[3]===3 && vals[4]===2);
+            if (esEscB) esEscalera = true;
+
+            let conteo = {}; cartas.forEach(c => conteo[c.val] = (conteo[c.val] || 0) + 1);
+            let uniqueVals = Object.keys(conteo).map(Number).sort((a, b) => conteo[b] !== conteo[a] ? conteo[b] - conteo[a] : b - a);
+
+            let kicker = 0, ordered = [];
+            uniqueVals.forEach(v => { for(let i=0; i<conteo[v]; i++) ordered.push(v); });
+            if(esEscB) ordered = [5, 4, 3, 2, 1];
+            for(let i=0; i<5; i++) kicker += ordered[i] * Math.pow(15, 4-i);
+
+            let isQuad = conteo[uniqueVals[0]] === 4, isTrip = conteo[uniqueVals[0]] === 3;
+            let isPair = conteo[uniqueVals[0]] === 2, isTwoPair = isPair && conteo[uniqueVals[1]] === 2, isFullHouse = isTrip && conteo[uniqueVals[1]] === 2;
+
+            let score = 0, nombre = "", coreCards = [];
+            if (esColor && esEscalera) { score = 80000000 + kicker; nombre = "Esc. Color"; coreCards = cartas; }
+            else if (isQuad) { score = 70000000 + kicker; nombre = "Póker"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
+            else if (isFullHouse) { score = 60000000 + kicker; nombre = "Full House"; coreCards = cartas; }
+            else if (esColor) { score = 50000000 + kicker; nombre = "Color"; coreCards = cartas; }
+            else if (esEscalera) { score = 40000000 + kicker; nombre = "Escalera"; coreCards = cartas; }
+            else if (isTrip) { score = 30000000 + kicker; nombre = "Trío"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
+            else if (isTwoPair) { score = 20000000 + kicker; nombre = "Doble Par"; coreCards = cartas.filter(c => c.val === uniqueVals[0] || c.val === uniqueVals[1]); }
+            else if (isPair) { score = 10000000 + kicker; nombre = "Par"; coreCards = cartas.filter(c => c.val === uniqueVals[0]); }
+            else { score = kicker; nombre = `Carta Alta (${cartas[0].v})`; coreCards = []; } 
+
+            return { score, nombre, cartas, coreCards };
         }
 
         function calcularMatematicaInterna() {
@@ -604,25 +646,26 @@
 
         function actualizarHUDMatematico() {
             calcularMatematicaInterna();
-            let mult = street === 1 ? 4 : 2;
-            let pozoFinal = pot + apuestaActual;
             document.getElementById('hud-outs').innerText = correctOuts;
-            document.getElementById('hud-prob').innerHTML = `${correctOuts} &times; ${mult} = <strong style="color:var(--primary);">${correctProb}%</strong>`;
-            document.getElementById('hud-odds').innerHTML = `${apuestaActual} &divide; ${pozoFinal} &times; 100 = <strong style="color:var(--info);">${correctOdds.toFixed(1)}%</strong>`;
+            document.getElementById('hud-prob').innerHTML = `${correctOuts} &times; ${street===1?4:2} = <strong style="color:var(--primary);">${correctProb}%</strong>`;
+            document.getElementById('hud-odds').innerHTML = `${apuestaActual} &divide; ${pot+apuestaActual} &times; 100 = <strong style="color:var(--info);">${correctOdds.toFixed(1)}%</strong>`;
         }
 
+        // ==========================================
+        // 5. FLUJO DE TIEMPOS Y CALLES
+        // ==========================================
         function nextStreet() {
             street++;
             document.getElementById('explanation-box').style.display = 'none';
             document.getElementById('btn-explain').style.display = 'none';
             document.getElementById('result-message').innerText = '';
 
-            if(street === 1) { document.getElementById('street-name').innerText = "FLOP (3 cartas)"; } 
-            else if(street === 2) { document.getElementById('street-name').innerText = "TURN (4 cartas)"; } 
+            if(street === 1) document.getElementById('street-name').innerText = "FLOP (3 cartas)";
+            else if(street === 2) document.getElementById('street-name').innerText = "TURN (4 cartas)";
             else if(street === 3) { 
                 document.getElementById('street-name').innerText = "RIVER (5 cartas)"; 
                 document.getElementById('btn-next-street').style.display = 'none';
-                document.getElementById('btn-next-hand').style.display = 'inline-block';
+                if(!esModoOnline) document.getElementById('btn-next-hand').style.display = 'inline-block';
                 resolverShowdownFinal(); return;
             }
 
@@ -630,9 +673,11 @@
             renderMesaCompleta();
 
             if(street < 3 && apuestaActual > 0 && modoActual !== 'hud') {
-                document.getElementById('btn-next-street').style.display = 'none';
+                if(!esModoOnline) document.getElementById('btn-next-street').style.display = 'none';
                 activarPanelMatematicoManual();
-            } else if (modoActual === 'hud') { actualizarHUDMatematico(); }
+            } else if (modoActual === 'hud') { 
+                actualizarHUDMatematico(); 
+            }
         }
 
         function simularAccionesOponentes() {
@@ -640,11 +685,11 @@
             jugadoresMesa.forEach(j => {
                 if(j.esHero || !j.activo) return;
                 let r = Math.random();
-                if(r < 0.2) { j.activo = false; j.accion = "Fold"; } 
+                if(r < 0.2 && !esModoOnline) { j.activo = false; j.accion = "Fold"; } // online se foldea real
                 else if(r < 0.6) { pot += 200; j.accion = "Iguala $200"; } 
                 else { pot += 400; j.accion = `Sube $400`; maxB = 400; }
             });
-            apuestaActual = maxB;
+            apuestaActual = maxB || 200;
             document.getElementById('opponent-action').innerText = apuestaActual > 0 ? `Apuesta de $${apuestaActual}. ¡Turno de calcular!` : "Todos pasan.";
         }
 
@@ -652,6 +697,11 @@
             calcularMatematicaInterna();
             document.getElementById('question-panel').style.display = 'block';
             document.getElementById('input-outs').value = ''; document.getElementById('input-prob').value = ''; document.getElementById('input-odds').value = '';
+            
+            if(esModoOnline) {
+                if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'none'; // ocultar hasta q resuelvan
+                iniciarTimer(60, () => submitAnswer('call')); // 60s max
+            }
         }
 
         function submitAnswer(decision) {
@@ -661,9 +711,12 @@
             let tiempoEmpleado = ((Date.now() - tiempoInicioMano) / 1000).toFixed(1);
 
             userData.total++;
-            let acierto = Math.abs(uOuts-correctOuts)<=1 && Math.abs(uProb-correctProb)<=4 && Math.abs(uOdds-correctOdds)<=4 && decision===realAction;
+            let aciertoOuts = Math.abs(uOuts-correctOuts)<=1;
+            let aciertoProb = Math.abs(uProb-correctProb)<=4;
+            let aciertoOdds = Math.abs(uOdds-correctOdds)<=4;
+            let aciertoGlobal = aciertoOuts && aciertoProb && aciertoOdds && decision===realAction;
             
-            if(acierto) {
+            if(aciertoGlobal) {
                 document.getElementById('result-message').innerHTML = "✅ ¡Cálculos perfectos!"; document.getElementById('result-message').style.color = "var(--primary)";
                 userData.aciertos++;
             } else {
@@ -671,91 +724,91 @@
             }
             saveStats();
 
-            if(esModoOnline && socket) {
-                socket.emit('enviarCalculoOnline', {
-                    codigo: miCodigoSala,
-                    nombre: miNombreOnline,
-                    outs: uOuts,
-                    porcentaje: uProb,
-                    potOdds: uOdds,
-                    tiempoSegundos: tiempoEmpleado,
-                    acierto: acierto
-                });
-            }
-
             document.getElementById('question-panel').style.display = 'none';
-            document.getElementById('btn-explain').style.display = 'inline-block';
-            document.getElementById('btn-next-street').style.display = 'inline-block';
+            
+            if(esModoOnline && socket) {
+                document.getElementById('timer-display').innerText = "Esperando cálculos...";
+                socket.emit('enviarCalculoOnline', {
+                    codigo: miCodigoSala, nombre: miNombreOnline,
+                    outs: uOuts, outsCorrecto: aciertoOuts,
+                    porcentaje: uProb, probCorrecto: aciertoProb,
+                    potOdds: uOdds, oddsCorrecto: aciertoOdds,
+                    tiempoSegundos: tiempoEmpleado
+                });
+                socket.emit('jugadorListo', { codigo: miCodigoSala, accion: decision });
+                if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'inline-block';
+                stopTimer();
+            } else {
+                document.getElementById('btn-explain').style.display = 'inline-block';
+                document.getElementById('btn-next-street').style.display = 'inline-block';
+            }
             prepararExplicacionDetallada();
         }
 
         function prepararExplicacionDetallada() {
-            let mult = street === 1 ? 4 : 2;
-            let faseTxt = street === 1 ? "Flop (faltan ver Turn y River)" : "Turn (falta ver solo el River)";
-            let pozoFinal = pot + apuestaActual;
-
-            let html = `<strong>💡 Explicación detallada con el Significado de cada Número:</strong><br><br>
-            1️⃣ <strong>¿Qué son tus Outs (${correctOuts})?</strong><br>
-            • Representan la cantidad exacta de cartas que completan tu jugada.<br><br>
-            2️⃣ <strong>¿Qué significa la cuenta del Porcentaje (${correctOuts} × ${mult} = ${correctProb}%)?</strong><br>
-            • Es la constante matemática de la regla del ${faseTxt}.<br><br>
-            3️⃣ <strong>¿Qué significa la cuenta de Pot Odds (${apuestaActual} ÷ ${pozoFinal} × 100 = ${correctOdds.toFixed(1)}%)?</strong><br>
-            • Costo para ver la próxima carta ($${apuestaActual}) dividido el pozo final ($${pozoFinal}).<br><br>
-            4️⃣ <strong>Conclusión:</strong><br>
-            • Como tu probabilidad (${correctProb}%) es ${correctProb >= correctOdds ? 'MAYOR' : 'MENOR'} que lo que exige el pozo (${correctOdds.toFixed(1)}%), la decisión correcta es <strong>${realAction.toUpperCase()}</strong>.`;
-
+            let html = `<strong>💡 Explicación detallada:</strong><br><br>
+            1️⃣ <strong>Outs (${correctOuts}):</strong> Cartas que completan tu jugada.<br>
+            2️⃣ <strong>Probabilidad (${correctOuts} × ${street===1?4:2} = ${correctProb}%):</strong> Regla del ${street===1?'Flop':'Turn'}.<br>
+            3️⃣ <strong>Pot Odds (${apuestaActual} ÷ ${pot+apuestaActual} × 100 = ${correctOdds.toFixed(1)}%):</strong> Costo vs Pozo Final.<br>
+            4️⃣ <strong>Conclusión:</strong> Tu prob (${correctProb}%) es ${correctProb >= correctOdds ? 'MAYOR' : 'MENOR'} al Pot Odds. Decisión: <strong>${realAction.toUpperCase()}</strong>.`;
             document.getElementById('explanation-box').innerHTML = html;
         }
 
         function resolverShowdownFinal() {
             isShowdown = true;
+            let activosScore = [];
+            
+            jugadoresMesa.forEach((j) => {
+                if(j.activo) {
+                    let res = evaluarMejorMano(j.cartas, mesa);
+                    j.nombreMano = res.nombre;
+                    j.scoreFinal = res.score;
+                    activosScore.push(j);
+                }
+            });
+
+            activosScore.sort((a, b) => b.scoreFinal - a.scoreFinal);
+            let ganador = activosScore[0];
+            
+            // Asignar ganador (Verde) y perdedores (Amarillo)
+            jugadoresMesa.forEach(j => {
+                if(j.activo) j.esGanador = (j.id === ganador.id);
+            });
+
             renderMesaCompleta(); 
 
-            let htmlOpps = '', activosScore = [];
-            jugadoresMesa.forEach((j) => {
-                let res = evaluarMejorMano(j.cartas, mesa);
-                let bColor = j.activo ? 'border-green' : 'border-red';
-                let txtColor = j.activo ? '#2ecc71' : '#e74c3c';
-                let estado = j.activo ? 'Activo' : 'Retirado';
-
-                if(j.activo) activosScore.push({ id: j.id, esHero: j.esHero, nombreMano: res.nombre, score: res.score });
-                if(j.esHero) return; 
-
-                htmlOpps += `<div class="opponent-seat ${bColor}">
-                    <strong>Oponente ${j.id}</strong><br><small>(${estado})</small><br>
-                    <div class="cards-container" style="min-height:auto; margin:5px 0;">
-                        ${renderCard(j.cartas[0])}${renderCard(j.cartas[1])}
-                    </div>
-                    <small style="color:${txtColor}; font-weight:bold;">${res.nombre}</small>
-                </div>`;
-            });
-            document.getElementById('opponents-container').innerHTML = htmlOpps;
-
-            activosScore.sort((a, b) => b.score - a.score);
-            let ganador = activosScore[0];
-            if(ganador.esHero) {
-                let heroGanadorRes = evaluarMejorMano(hero, mesa);
-                highlightCards = heroGanadorRes.coreCards; 
-                renderMesaCompleta(); 
-            }
-
-            let txtGanador = ganador.esHero ? `¡Ganaste la mano con <strong>${ganador.nombreMano}</strong> y te llevaste $${pot}! 🏆` : `¡El <strong>Oponente ${ganador.id}</strong> ganó con <strong>${ganador.nombreMano}</strong>!`;
+            let txtGanador = ganador.esHero ? `¡Ganaste la mano con <strong>${ganador.nombreMano}</strong> y te llevaste $${pot}! 🏆` : `¡<strong>${ganador.nombre}</strong> ganó con <strong>${ganador.nombreMano}</strong>!`;
             document.getElementById('opponent-action').innerHTML = `<strong>SHOWDOWN:</strong> ${txtGanador}`;
+            
+            if(esModoOnline && esAnfitrionSala) {
+                document.getElementById('btn-next-street-host').innerText = "Siguiente Mano 🃏";
+            }
+        }
+
+        // ==========================================
+        // 6. UTILIDADES TIEMPO Y EXPLICACIÓN
+        // ==========================================
+        function iniciarTimer(segs, callbackTimeOut) {
+            clearInterval(timerRonda);
+            let s = segs;
+            document.getElementById('timer-display').innerText = `Tiempo: ${s}s`;
+            timerRonda = setInterval(() => {
+                s--;
+                document.getElementById('timer-display').innerText = `Tiempo: ${s}s`;
+                if(s <= 0) { clearInterval(timerRonda); if(callbackTimeOut) callbackTimeOut(); }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerRonda);
+            document.getElementById('timer-display').innerText = "-";
         }
 
         function toggleExplanation() {
             let box = document.getElementById('explanation-box');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
-            
-            if(box.style.display === 'block') {
-                let segundos = 60;
-                let intervalo = setInterval(() => {
-                    segundos--;
-                    if(segundos <= 0 || box.style.display === 'none') {
-                        clearInterval(intervalo);
-                        box.style.display = 'none';
-                    }
-                }, 1000);
+            if(box.style.display === 'block' && esModoOnline) {
+                iniciarTimer(30, () => { box.style.display = 'none'; }); // 30s de lectura
             }
         }
     </script>
