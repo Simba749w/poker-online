@@ -24,12 +24,12 @@ io.on('connection', (socket) => {
         socket.join(codigoSala);
         io.to(codigoSala).emit('actualizarSalaOnline', {
             codigoSala: codigoSala,
-            jugadores: salas[codigoSala].jugadores.map(j => ({ ...j, esAnfitrion: (j.id === salas[codigoSala].anfitrion) })),
-            esAnfitrion: true 
+            anfitrion: socket.id, // FUNDAMENTAL PARA EL BUG DEL HOST
+            jugadores: salas[codigoSala].jugadores.map(j => ({ ...j, esAnfitrion: (j.id === salas[codigoSala].anfitrion) }))
         });
     });
 
-    // 2. Unirse a Sala (Máx 9 jugadores)
+    // 2. Unirse a Sala (2 a 9 jugadores)
     socket.on('unirseSala', (datos) => {
         const sala = salas[datos.codigo];
         if (!sala) return socket.emit('errorSala', 'La sala no existe.');
@@ -41,12 +41,12 @@ io.on('connection', (socket) => {
         
         io.to(datos.codigo).emit('actualizarSalaOnline', {
             codigoSala: datos.codigo,
-            jugadores: sala.jugadores.map(j => ({ ...j, esAnfitrion: (j.id === sala.anfitrion) })),
-            esAnfitrion: (socket.id === sala.anfitrion)
+            anfitrion: sala.anfitrion, // FUNDAMENTAL PARA EL BUG DEL HOST
+            jugadores: sala.jugadores.map(j => ({ ...j, esAnfitrion: (j.id === sala.anfitrion) }))
         });
     });
 
-    // 3. Iniciar Partida
+    // 3. Iniciar Partida Online
     socket.on('iniciarPartidaOnline', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
@@ -56,12 +56,22 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 4. Avanzar Calle
+    // 4. Avanzar Calle (Misma Mano)
     socket.on('avanzarCalleHost', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.jugadores.forEach(j => j.listo = false);
-            io.to(codigo).emit('avanzarSiguienteRonda');
+            io.to(codigo).emit('avanzarSiguienteRonda'); // Avanza Flop, Turn, River
+        }
+    });
+
+    // 4.b Iniciar NUEVA Mano (Acá rota el Dealer)
+    socket.on('siguienteManoOnline', (codigo) => {
+        const sala = salas[codigo];
+        if (sala && sala.anfitrion === socket.id) {
+            sala.dealerIndex = (sala.dealerIndex + 1) % sala.jugadores.length; // ROTACIÓN CORRECTA
+            sala.jugadores.forEach(j => { j.listo = false; j.activo = true; });
+            io.to(codigo).emit('nuevaManoOnline', { dealerIndex: sala.dealerIndex });
         }
     });
 
