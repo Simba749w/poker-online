@@ -41,7 +41,6 @@ io.on('connection', (socket) => {
 
         socket.join(codigoSala);
         
-        // Enviamos la lista de jugadores indicando explícitamente quién es anfitrión
         io.to(codigoSala).emit('actualizarSalaOnline', {
             codigoSala: codigoSala,
             jugadores: salas[codigoSala].jugadores.map(j => ({
@@ -69,7 +68,6 @@ io.on('connection', (socket) => {
 
         socket.join(datos.codigo);
         
-        // Actualizamos a todos en la sala enviando correctamente el rol de anfitrión (👑)
         io.to(datos.codigo).emit('actualizarSalaOnline', {
             codigoSala: datos.codigo,
             jugadores: sala.jugadores.map(j => ({
@@ -86,13 +84,11 @@ io.on('connection', (socket) => {
         if (sala && sala.anfitrion === socket.id) {
             sala.estadoJuego = 'jugando';
             sala.jugadores.forEach(j => j.listo = false);
-
-            // Emitimos a todos que la partida comenzó para que cambien de vista
             io.to(codigo).emit('partidaIniciadaOnline');
         }
     });
 
-    // Avanzar de Calle (Flop -> Turn -> River) por el Anfitrión
+    // Avanzar de Calle por el Anfitrión
     socket.on('avanzarCalleHost', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
@@ -117,7 +113,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Marcar Listo para avanzar de ronda
+    // Marcar Listo
     socket.on('jugadorListo', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
