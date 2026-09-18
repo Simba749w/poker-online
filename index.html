@@ -36,7 +36,7 @@
         .view {
             display: none;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px; /* Aumentado para que quepan los 3 paneles en HUD */
             background: var(--bg-panel);
             padding: 20px;
             border-radius: 15px;
@@ -127,10 +127,12 @@
         .game-layout {
             display: flex;
             gap: 20px;
+            align-items: flex-start;
         }
         
         .main-game-area {
             flex: 3;
+            min-width: 60%;
         }
         
         .sidebar-ranking {
@@ -141,6 +143,28 @@
             border-radius: 10px;
             padding: 15px;
             height: fit-content;
+        }
+        
+        /* NUEVOS PANELES HUD */
+        .sidebar-hud {
+            display: none;
+            flex: 1.1;
+            background: #151515;
+            border-radius: 10px;
+            padding: 15px;
+            height: fit-content;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .mini-stats {
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 4px;
+            border-radius: 4px;
+            margin-top: 5px;
+            border: 1px solid var(--info);
         }
 
         /* DISEÑO DE LA MESA OVALADA */
@@ -162,9 +186,9 @@
         
         .seat {
             position: absolute;
-            width: 110px;
+            width: 115px;
             padding: 8px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             border: 2px solid #444;
             border-radius: 8px;
             text-align: center;
@@ -291,7 +315,7 @@
             padding-bottom: 10px;
         }
         
-        /* TABLAS ONLINE */
+        /* TABLAS ONLINE Y HUD */
         .ranking-table {
             width: 100%;
             border-collapse: collapse;
@@ -304,6 +328,7 @@
             text-align: center;
         }
         .ranking-table th { background: #222; color: var(--accent); }
+        .hud-card-text { font-weight:bold; font-size: 1rem; }
 
         /* ESTILOS CALCULADORA PERSONALIZADA */
         .slot-empty {
@@ -539,7 +564,7 @@
     <!-- ============================================== -->
     <!-- MESA REAL EN VIVO (COMPARTIDA POR LOS MODOS) -->
     <!-- ============================================== -->
-    <div id="view-game" class="view" style="max-width: 1150px;">
+    <div id="view-game" class="view">
         <div class="header-bar">
             <h2 id="game-title">🃏 Mesa de Póker en Vivo</h2>
             <div id="timer-display" style="font-size: 1.2rem; color: var(--accent); font-weight: bold; display: none;">Tiempo: 30s</div>
@@ -547,6 +572,15 @@
         </div>
 
         <div class="game-layout">
+            
+            <!-- PANEL IZQUIERDO: HUD TEORIA Y EXPLICACION BASADA EN LIBROS -->
+            <div class="sidebar-hud" id="sidebar-left-hud" style="border-left: 4px solid var(--accent);">
+                <h3 style="color:var(--accent); margin-top:0; border-bottom:1px solid #444; padding-bottom:10px;">📚 Teoría y Estrategia</h3>
+                <div id="teoria-content" style="color:#ddd;">
+                    <!-- Se llena por JS -->
+                </div>
+            </div>
+
             <div class="main-game-area">
                 
                 <!-- HUD ASISTIDO (SE MUESTRA SOLO EN MODO HUD) -->
@@ -627,7 +661,21 @@
                 </div>
             </div>
 
-            <!-- PANEL DE RANKING ONLINE (A LA DERECHA) -->
+            <!-- PANEL DERECHO: TABLERO DE MANOS (SOLO HUD) -->
+            <div class="sidebar-hud" id="sidebar-right-hud" style="border-left: 4px solid var(--info);">
+                <h3 style="color:var(--info); margin-top:0; border-bottom:1px solid #444; padding-bottom:10px;">🎯 Análisis de Mesa</h3>
+                <p style="font-size:0.8rem; color:#aaa;">Cartas y fuerza de cada jugador activo.</p>
+                <table class="ranking-table">
+                    <thead>
+                        <tr><th>Jugador</th><th>Cartas</th><th>Mano Actual</th></tr>
+                    </thead>
+                    <tbody id="hud-players-table">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PANEL DE RANKING ONLINE (A LA DERECHA - OCULTO EN HUD) -->
             <div class="sidebar-ranking" id="sidebar-ranking-box">
                 <h3 style="margin-top:0; color:var(--accent);">📊 Detalle de la Ronda</h3>
                 <table class="ranking-table">
@@ -723,6 +771,12 @@
             let hlClass = isHighlight ? ' highlight-yellow' : '';
             return `<div class="card ${card.c}${hlClass}">${txt}${card.p}</div>`;
         }
+        
+        // Helper para mostrar cartas de los rivales en el texto del Panel Derecho HUD
+        function getCardText(c) { 
+            let txt = c.v === 'T' ? '10' : c.v;
+            return `<span class="${c.c}">${txt}${c.p}</span>`; 
+        }
 
         // ==========================================
         // NUEVA FUNCIÓN: CALCULADORA DE MANO REAL
@@ -773,7 +827,6 @@
             let valHtml = '';
             
             Object.keys(valoresMap).forEach(v => {
-                // Verificar si la carta ya fue seleccionada en la mesa real para sacarla del picker
                 let isPicked = Object.values(customMano).some(c => c && c.v === v && c.p === suit);
                 
                 if(!isPicked) {
@@ -817,27 +870,21 @@
                 return alert("Para analizar la rentabilidad, tenés que elegir tus 2 cartas (Hole Cards) primero.");
             }
 
-            // Evaluar la mano que tenés hecha actualmente
             let resActual = evaluarMejorMano(h, b);
-            
-            // Simulación Montecarlo (1500 iteraciones para no trabar el navegador)
             let wins = 0;
             let ties = 0;
             let iteraciones = 1500;
             
-            // Filtrar las cartas que ya seleccionaste para que no salgan en el mazo aleatorio
             let deckRestante = mazoFull.filter(c => {
                 let inHand = h.some(hc => hc.v === c.v && hc.p === c.p);
                 let inBoard = b.some(bc => bc.v === c.v && bc.p === c.p);
                 return !inHand && !inBoard;
             });
 
-            // Correr simulación
             for(let i = 0; i < iteraciones; i++) {
                 let tempDeck = [...deckRestante].sort(() => Math.random() - 0.5);
                 let currentBoard = [...b];
                 
-                // Rellenar las cartas del board que falten
                 while(currentBoard.length < 5) {
                     currentBoard.push(tempDeck.pop());
                 }
@@ -845,7 +892,6 @@
                 let heroScore = evaluarMejorMano(h, currentBoard).score;
                 let maxVillainScore = 0;
                 
-                // Repartir cartas a los villanos
                 for(let v = 0; v < numPlayers - 1; v++) {
                     let vHand = [tempDeck.pop(), tempDeck.pop()];
                     let vScore = evaluarMejorMano(vHand, currentBoard).score;
@@ -861,13 +907,11 @@
                 }
             }
 
-            // Calcular porcentajes de Equity
             let eqWin = (wins / iteraciones) * 100;
             let eqTie = (ties / iteraciones) * 100;
-            let eqTotal = eqWin + eqTie; // La Equity total que te pertenece
+            let eqTotal = eqWin + eqTie;
             let eqLose = 100 - eqWin - eqTie;
 
-            // Calcular Pot Odds Reales
             let potOdds = 0;
             let decisionText = "";
             let potInfoHtml = "";
@@ -898,7 +942,6 @@
                 `;
             }
 
-            // Armar el texto final
             let txt = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
@@ -975,7 +1018,6 @@
                 miCodigoSala = datos.codigoSala; 
                 esModoOnline = true; 
                 
-                // COMPROBAR SI SOY EL HOST BASADO EN EL ID QUE MANDÓ EL SERVIDOR
                 esAnfitrionSala = (socket.id === datos.anfitrion); 
                 
                 document.getElementById('online-lobby-menu').style.display = 'none'; 
@@ -989,7 +1031,6 @@
                     lista.innerHTML += `<li>👤 ${j.nombre}${j.esAnfitrion ? ' 👑' : ''}</li>`;
                 });
                 
-                // MOSTRAR BOTÓN DE INICIO SÓLO SI SOY EL ANFITRIÓN
                 if (esAnfitrionSala) {
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('waiting-host-msg').style.display = 'none';
@@ -1004,7 +1045,10 @@
                 totalJugadores = document.querySelectorAll('#online-players-list li').length; 
                 dealerPos = data.dealerIndex || 0;
                 
+                // Mostrar paneles correctos según el modo online
                 document.getElementById('sidebar-ranking-box').style.display = 'block'; 
+                document.getElementById('sidebar-left-hud').style.display = 'none';
+                document.getElementById('sidebar-right-hud').style.display = 'none';
                 document.getElementById('timer-display').style.display = 'block'; 
                 document.getElementById('btn-fold-local').style.display = 'none';
                 
@@ -1017,7 +1061,6 @@
                 nextStreet(); 
             });
             
-            // EL DEALER ROTA EN EL SERVIDOR Y AVISA A LOS CLIENTES ACÁ
             socket.on('nuevaManoOnline', (data) => {
                 dealerPos = data.dealerIndex; 
                 rankingDataGlobal = [];
@@ -1030,7 +1073,6 @@
                 
                 document.getElementById('ready-counter').innerText = `${cantListos}/${cantTotal} listos`;
                 
-                // Actualizar Folds
                 data.jugadores.forEach((jSrv) => { 
                     let jLocal = jugadoresMesa.find(jl => jl.nombre === jSrv.nombre || jl.id === jSrv.id); 
                     if(jLocal && !jSrv.activo) {
@@ -1043,12 +1085,9 @@
 
             socket.on('resultadoRankingJugador', (data) => {
                 rankingDataGlobal.push(data); 
-                
-                // Ordenar por velocidad
                 rankingDataGlobal.sort((a,b) => a.tiempoSegundos - b.tiempoSegundos);
                 
-                let tr1 = "";
-                let tr2 = "";
+                let tr1 = ""; let tr2 = "";
                 
                 rankingDataGlobal.forEach((d, i) => {
                     tr1 += `<tr>
@@ -1082,12 +1121,23 @@
         // ==========================================
         function openModeConfig(modo) { 
             esModoOnline = false; 
-            document.getElementById('sidebar-ranking-box').style.display = 'none'; 
+            
+            // Configuramos visibilidad de paneles dependiendo si elegimos Práctica o HUD
+            if(modo === 'hud') {
+                document.getElementById('sidebar-ranking-box').style.display = 'none'; 
+                document.getElementById('sidebar-left-hud').style.display = 'block';
+                document.getElementById('sidebar-right-hud').style.display = 'block';
+                document.getElementById('config-title').innerText = 'Configurar Práctica Asistida (Visión Rayos X)';
+            } else {
+                document.getElementById('sidebar-ranking-box').style.display = 'none'; 
+                document.getElementById('sidebar-left-hud').style.display = 'none';
+                document.getElementById('sidebar-right-hud').style.display = 'none';
+                document.getElementById('config-title').innerText = 'Configurar Manos Infinitas';
+            }
+            
             document.getElementById('timer-display').style.display = 'none'; 
             document.getElementById('btn-fold-local').style.display = 'inline-block'; 
-            
             modoActual = modo; 
-            document.getElementById('config-title').innerText = modo === 'hud' ? 'Configurar Práctica Asistida' : 'Configurar Manos Infinitas';
             
             openView('view-config'); 
         }
@@ -1102,7 +1152,6 @@
             iniciarMano(); 
         }
 
-
         // ==========================================
         // CREACIÓN DEL MAZO Y REPARTO DE MANO
         // ==========================================
@@ -1113,7 +1162,6 @@
                     mazo.push({v: v, val: valoresMap[v], p: p.s, c: p.c}); 
                 }
             }
-            // Mezclar
             mazo.sort(() => Math.random() - 0.5); 
         }
         
@@ -1141,7 +1189,6 @@
             pot = 300; 
             apuestaActual = 200;
             
-            // El Dealer NO rota acá. Se calcula basado en la variable global dealerPos.
             let sbPos = (dealerPos + 1) % totalJugadores;
             let bbPos = (dealerPos + 2) % totalJugadores;
 
@@ -1171,7 +1218,6 @@
 
             renderMesaCompleta();
             
-            // Restablecer Vista
             document.getElementById('question-panel').style.display = 'none'; 
             document.getElementById('btn-next-street').style.display = esModoOnline ? 'none' : 'inline-block'; 
             document.getElementById('btn-next-hand').style.display = 'none'; 
@@ -1193,22 +1239,25 @@
             } else { 
                 document.getElementById('online-preflop-actions').style.display = 'none'; 
             }
+            
+            if(modoActual === 'hud') {
+                actualizarHUDMatematico();
+            }
         }
 
-        // SÓLO ACÁ ROTA EL DEALER (CUANDO SE TOCA SIGUIENTE MANO)
         function iniciarNuevaMano() {
             dealerPos = (dealerPos + 1) % totalJugadores; 
             iniciarMano();
         }
 
         function renderMesaCompleta() {
+            let boardActual = [];
+            if(street === 1) boardActual = [mesa[0], mesa[1], mesa[2]];
+            if(street === 2) boardActual = [mesa[0], mesa[1], mesa[2], mesa[3]];
+            if(street === 3) boardActual = mesa;
+
             if(street > 0 && street < 4) { 
-                let arrayEvaluacion = [];
-                if (street === 1) arrayEvaluacion = [mesa[0], mesa[1], mesa[2]];
-                if (street === 2) arrayEvaluacion = [mesa[0], mesa[1], mesa[2], mesa[3]];
-                if (street === 3) arrayEvaluacion = mesa;
-                
-                let evaluacionHero = evaluarMejorMano(hero, arrayEvaluacion);
+                let evaluacionHero = evaluarMejorMano(hero, boardActual);
                 highlightCards = evaluacionHero.coreCards; 
             }
             
@@ -1216,9 +1265,7 @@
             
             let htmlMesa = '';
             if(street === 0) htmlMesa = '<span style="color:#aaa;">Esperando Flop...</span>';
-            if(street === 1) htmlMesa = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]);
-            if(street === 2) htmlMesa = renderCard(mesa[0]) + renderCard(mesa[1]) + renderCard(mesa[2]) + renderCard(mesa[3]);
-            if(street === 3) htmlMesa = mesa.map(c => renderCard(c)).join('');
+            else htmlMesa = boardActual.map(c => renderCard(c)).join('');
             
             document.getElementById('board-cards').innerHTML = htmlMesa;
 
@@ -1230,10 +1277,10 @@
             const centroX = 425;
             const centroY = 250; 
             
+            let isHudMode = (modoActual === 'hud');
+            
             jugadoresMesa.forEach((jugador, indice) => {
-                // Las sillas quedan FIJAS. El ángulo depende del índice del asiento, no del Dealer.
                 let anguloEnRadianes = (indice / totalJugadores) * 2 * Math.PI + Math.PI/2;
-                
                 let posLeft = centroX + radioX * Math.cos(anguloEnRadianes);
                 let posTop = centroY + radioY * Math.sin(anguloEnRadianes);
                 
@@ -1256,11 +1303,22 @@
                 let colorNombre = jugador.activo ? '#fff' : '#888';
                 divHtml += `<strong style="color:${colorNombre}">${jugador.nombre}</strong><br><small>$${jugador.fichas}</small>`;
                 
-                if(jugador.esHero && street < 4) {
+                // LÓGICA DE REVELADO TOTAL (REQ: Mostrar todas en Showdown y en HUD Mode)
+                let mostrarCartas = jugador.esHero || isShowdown || (isHudMode && jugador.activo);
+
+                if(mostrarCartas && street < 4 && jugador.activo) {
                     divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div>`;
+                    
+                    // Solo en HUD agregamos el recuadro de stats abajo de la carta
+                    if (isHudMode && street > 0) {
+                        let jRes = evaluarMejorMano(jugador.cartas, boardActual);
+                        divHtml += `<div class="mini-stats">${jRes.nombre}</div>`;
+                    }
                 } else if(jugador.activo && street < 4) {
+                    // Ocultas (Rivales en práctica normal)
                     divHtml += `<div class="cards-container">${renderCard({},true)}${renderCard({},true)}</div>`;
                 } else if(isShowdown && jugador.activo) {
+                    // En el river (Showdown) todos los activos muestran la mano armada
                     divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div><small style="color:var(--accent);">${jugador.nombreMano}</small>`;
                 }
                 
@@ -1268,11 +1326,11 @@
                 container.appendChild(div);
             });
             
-            if(!isShowdown && modoActual === 'hud' && street > 0 && street < 3) {
-                actualizarHUDMatematico();
+            // Actualizar tablas laterales de HUD si aplica
+            if(isHudMode) {
+                actualizarTableroAnalisisHUD(boardActual);
             }
         }
-
 
         // ==========================================
         // MATEMÁTICA Y EVALUADOR DE MANOS
@@ -1319,16 +1377,12 @@
             cartas.forEach(c => { conteo[c.val] = (conteo[c.val] || 0) + 1; }); 
             
             let unq = Object.keys(conteo).map(Number).sort((a,b) => {
-                if(conteo[b] !== conteo[a]) {
-                    return conteo[b] - conteo[a];
-                }
+                if(conteo[b] !== conteo[a]) { return conteo[b] - conteo[a]; }
                 return b - a;
             }); 
             
             let kicker = 0; 
-            for(let i=0; i<5; i++) {
-                kicker += unq[0] * Math.pow(15, 4-i); 
-            }
+            for(let i=0; i<5; i++) { kicker += unq[0] * Math.pow(15, 4-i); }
             
             let isQuad = conteo[unq[0]] === 4;
             let isTrip = conteo[unq[0]] === 3;
@@ -1336,7 +1390,7 @@
             let is2Pair = isPair && conteo[unq[1]] === 2;
             let isFullHouse = isTrip && conteo[unq[1]] === 2;
             
-            if(esColor && esEscalera) return {score: 80000000 + kicker, nombre: "Escalera de Color", coreCards: cartas}; 
+            if(esColor && esEscalera) return {score: 80000000 + kicker, nombre: "Escalera Color", coreCards: cartas}; 
             if(isQuad) return {score: 70000000 + kicker, nombre: "Póker", coreCards: cartas.filter(c => c.val === unq[0])}; 
             if(isFullHouse) return {score: 60000000 + kicker, nombre: "Full House", coreCards: cartas}; 
             if(esColor) return {score: 50000000 + kicker, nombre: "Color", coreCards: cartas}; 
@@ -1348,13 +1402,33 @@
             return {score: kicker, nombre: "Carta Alta", coreCards: []}; 
         }
 
+        // ==========================================
+        // EXPLICACIÓN Y TEORÍA HUD LATERAL
+        // ==========================================
+        function actualizarTableroAnalisisHUD(boardActual) {
+            let trs = "";
+            jugadoresMesa.forEach(j => {
+                if(!j.activo) return;
+                let res = evaluarMejorMano(j.cartas, boardActual);
+                let manoNombre = street > 0 ? res.nombre : 'Pre-Flop (Base)';
+                
+                trs += `<tr>
+                    <td style="font-weight:bold; color:${j.esHero ? 'var(--primary)' : 'white'}">${j.nombre}</td>
+                    <td class="hud-card-text">${getCardText(j.cartas[0])} ${getCardText(j.cartas[1])}</td>
+                    <td style="font-size:0.8rem; color:var(--accent);">${manoNombre}</td>
+                </tr>`;
+            });
+            document.getElementById('hud-players-table').innerHTML = trs;
+        }
+
         function calcularMatematicaInterna() {
             let pC = { '♥':0, '♦':0, '♣':0, '♠':0 }; 
             hero.forEach(c => pC[c.p]++); 
             
             let boardActual = [];
             if(street === 1) boardActual = [mesa[0], mesa[1], mesa[2]];
-            else boardActual = [mesa[0], mesa[1], mesa[2], mesa[3]];
+            else if(street === 2) boardActual = [mesa[0], mesa[1], mesa[2], mesa[3]];
+            else if(street === 3) boardActual = mesa;
             
             boardActual.forEach(c => pC[c.p]++); 
             let maxP = Math.max(...Object.values(pC));
@@ -1367,11 +1441,51 @@
 
         function actualizarHUDMatematico() { 
             calcularMatematicaInterna(); 
+            let multiplicador = street === 1 ? 4 : (street === 2 ? 2 : 0);
+            
             document.getElementById('hud-outs').innerText = correctOuts; 
-            document.getElementById('hud-prob').innerHTML = `${correctProb}%`; 
+            
+            // Añadiendo la cuenta explícita (Req 2)
+            if(street > 0 && street < 3) {
+                document.getElementById('hud-prob').innerHTML = `${correctProb}% <span style="color:#aaa; font-size:0.8rem;">(Cuenta: ${correctOuts} outs &times; ${multiplicador})</span>`; 
+            } else {
+                document.getElementById('hud-prob').innerHTML = `${correctProb}%`; 
+            }
+            
             document.getElementById('hud-odds').innerHTML = `${correctOdds.toFixed(1)}%`; 
+            
+            // PANEL IZQUIERDO DE TEORIA (Req 3 - Libros y Explicación)
+            if (modoActual === 'hud') {
+                let esRentable = correctProb >= correctOdds;
+                
+                let consejoLibros = esRentable 
+                    ? "Según la <strong>Teoría Fundamental del Póker (Sklansky)</strong>, tenés ventaja matemática. Hacer CALL o RAISE ahora maximiza tus ganancias a largo plazo porque las Pot Odds te son favorables." 
+                    : "Según <strong>Harrington on Hold'em</strong>, estás persiguiendo cartas en desventaja. Las Pot Odds requeridas superan tu probabilidad de ganar. La matemática exige hacer FOLD para preservar tu stack.";
+                    
+                let textoReglas = street === 0 
+                    ? "En el Pre-Flop evaluamos la fuerza base de tu mano. Oponentes suelen jugar con rangos cerrados desde posiciones tempranas (UTG) y más abiertos desde el Botón."
+                    : `Para calcular tu probabilidad en el ${street===1 ? 'Flop' : 'Turn'}, buscamos las <strong>Outs</strong> y aplicamos la <strong>Regla del ${multiplicador}</strong>.`;
+
+                let teoriaHtml = `
+                    <p>${textoReglas}</p>
+                    
+                    <div style="background:#222; padding:8px; border-radius:5px; margin-top:10px;">
+                        <strong style="color:var(--info);">💰 Cuenta de Pot Odds:</strong><br>
+                        ${apuestaActual} (Costo) &divide; [ ${pot} + ${apuestaActual} ] &times; 100 = <strong>${correctOdds.toFixed(1)}%</strong>
+                    </div>
+
+                    <div style="background:#222; padding:10px; border-radius:5px; margin-top:15px; border-left: 4px solid ${esRentable ? 'var(--primary)' : 'var(--danger)'};">
+                        <strong>Consejo de Academia:</strong><br> 
+                        <p style="font-size:0.9rem; margin-bottom:0;">${consejoLibros}</p>
+                    </div>
+                `;
+                document.getElementById('teoria-content').innerHTML = teoriaHtml;
+            }
         }
 
+        // ==========================================
+        // LÓGICA DE CALLES Y DECISIONES
+        // ==========================================
         function nextStreet() {
             street++; 
             
@@ -1392,7 +1506,6 @@
                 return resolverShowdownFinal(); 
             }
             
-            // Simular oponentes
             let maxBet = 0; 
             jugadoresMesa.forEach(j => { 
                 if(j.esHero || !j.activo) return; 
@@ -1415,7 +1528,6 @@
             
             renderMesaCompleta();
             
-            // Solicitar cálculo
             if(street < 3 && modoActual !== 'hud') { 
                 if(!esModoOnline) {
                     document.getElementById('btn-next-street').style.display = 'none'; 
@@ -1485,7 +1597,6 @@
                 document.getElementById('btn-next-street').style.display = 'inline-block'; 
             }
             
-            // CONSTRUIR EXPLICACION DETALLADA
             let reglaTexto = street === 1 
                 ? "En el Flop usamos la <strong>Regla del 4</strong> (multiplicamos tus outs x4 porque todavía faltan 2 cartas por salir)." 
                 : "En el Turn usamos la <strong>Regla del 2</strong> (multiplicamos x2 porque solo falta el River).";
@@ -1504,6 +1615,9 @@
             document.getElementById('explanation-box').innerHTML = strHtml;
         }
 
+        // ==========================================
+        // SHOWDOWN (REQ 1: MOSTRAR TODAS LAS CARTAS)
+        // ==========================================
         function resolverShowdownFinal() {
             isShowdown = true; 
             
@@ -1526,6 +1640,7 @@
                 }
             }); 
             
+            // Esto re-renderiza y al estar "isShowdown = true", renderMesaCompleta muestra TODAS las cartas
             renderMesaCompleta();
             
             let showdownTexto = "";
