@@ -1231,8 +1231,8 @@
             const centroY = 250; 
             
             jugadoresMesa.forEach((jugador, indice) => {
-                let posicionRelativa = (indice - dealerPos + totalJugadores) % totalJugadores;
-                let anguloEnRadianes = (posicionRelativa / totalJugadores) * 2 * Math.PI + Math.PI/2;
+                // Las sillas quedan FIJAS. El ángulo depende del índice del asiento, no del Dealer.
+                let anguloEnRadianes = (indice / totalJugadores) * 2 * Math.PI + Math.PI/2;
                 
                 let posLeft = centroX + radioX * Math.cos(anguloEnRadianes);
                 let posTop = centroY + radioY * Math.sin(anguloEnRadianes);
