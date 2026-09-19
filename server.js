@@ -8,6 +8,28 @@ app.use(express.static(__dirname + '/public'));
 
 const salas = {};
 
+// ==========================================
+// FUNCIÓN CLAVE: Verificar si todos están listos
+// ==========================================
+function verificarTodosListos(sala, codigoSala) {
+    // Filtramos solo a los jugadores que siguen en la mano (no foldearon)
+    const jugadoresActivos = sala.jugadores.filter(j => j.activo);
+    
+    // Verificamos si TODOS los activos están listos
+    const todosListos = jugadoresActivos.length > 0 && jugadoresActivos.every(j => j.listo);
+    
+    // Le mandamos a todos la actualización de quién falta
+    io.to(codigoSala).emit('estadoListosActualizado', { jugadores: sala.jugadores });
+
+    if (todosListos) {
+        // Reseteamos el estado de "listo" para la siguiente fase
+        sala.jugadores.forEach(j => j.listo = false);
+        
+        // Le avisamos a todos los clientes que salten la fase automáticamente
+        io.to(codigoSala).emit('todosListosAvanzarFase');
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('Jugador conectado:', socket.id);
 
@@ -24,7 +46,7 @@ io.on('connection', (socket) => {
         socket.join(codigoSala);
         io.to(codigoSala).emit('actualizarSalaOnline', {
             codigoSala: codigoSala,
-            anfitrion: socket.id, // FUNDAMENTAL PARA EL BUG DEL HOST
+            anfitrion: socket.id, 
             jugadores: salas[codigoSala].jugadores.map(j => ({ ...j, esAnfitrion: (j.id === salas[codigoSala].anfitrion) }))
         });
     });
@@ -41,7 +63,7 @@ io.on('connection', (socket) => {
         
         io.to(datos.codigo).emit('actualizarSalaOnline', {
             codigoSala: datos.codigo,
-            anfitrion: sala.anfitrion, // FUNDAMENTAL PARA EL BUG DEL HOST
+            anfitrion: sala.anfitrion, 
             jugadores: sala.jugadores.map(j => ({ ...j, esAnfitrion: (j.id === sala.anfitrion) }))
         });
     });
@@ -56,7 +78,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 4. Avanzar Calle (Misma Mano)
+    // 4. Avanzar Calle Manual (Por si el Host quiere forzarlo)
     socket.on('avanzarCalleHost', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
@@ -99,16 +121,28 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 6. Marcar Listo / Fold
+    // 6. Marcar Listo / Fold (Acciones de toma de decisión)
     socket.on('jugadorListo', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
             let jugador = sala.jugadores.find(j => j.id === socket.id);
             if (jugador) {
                 jugador.listo = true;
-                if(datos.accion === 'fold') jugador.activo = false;
+                if(datos.accion === 'fold') jugador.activo = false; // Se tira, no estorba más en la mano
             }
-            io.to(datos.codigo).emit('estadoListosActualizado', { jugadores: sala.jugadores });
+            verificarTodosListos(sala, datos.codigo);
+        }
+    });
+
+    // 7. Saltear Fase de Revisión (NUEVO)
+    socket.on('jugadorListoFase', (datos) => {
+        const sala = salas[datos.codigo];
+        if (sala) {
+            let jugador = sala.jugadores.find(j => j.id === socket.id);
+            if (jugador) {
+                jugador.listo = true;
+            }
+            verificarTodosListos(sala, datos.codigo);
         }
     });
 
@@ -120,4 +154,4 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log(`Servidor de Poker en puerto ${PORT}`);
-}); 
+});
