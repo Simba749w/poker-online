@@ -1031,6 +1031,10 @@
                 document.getElementById('tbody-ronda').innerHTML = tr1; 
                 document.getElementById('tbody-general').innerHTML = tr2;
             });
+            // Novedad: El servidor nos dice que todos ya están listos, avanzamos fase automáticamente
+            socket.on('todosListosAvanzarFase', () => {
+                if (esAnfitrionSala) avanzarCalleHostOnline();
+            });
         }
 
         function marcarListoOnline(accion) {
