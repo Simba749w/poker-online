@@ -118,7 +118,6 @@
         .btn-info { background: var(--info); }
         .btn-danger { background: var(--danger); }
         .btn-accent { background: var(--accent); color: black;}
-        .btn-warning { background: #f39c12; color: black; }
         
         .btn:hover {
             filter: brightness(1.1);
@@ -611,7 +610,7 @@
 
             <div class="main-game-area">
                 
-                <!-- HUD ASISTIDO (Oculto en Competitivo Online) -->
+                <!-- HUD ASISTIDO -->
                 <div class="math-hud" id="hud-panel">
                     <strong style="color:var(--accent);">🧮 Asistente HUD (Cálculos en Tiempo Real):</strong><br>
                     📍 Tu Posición en la mesa: <strong id="hud-position" style="color:var(--info);">---</strong><br>
@@ -634,12 +633,12 @@
                     <p id="opponent-action" style="color: var(--info); font-weight: bold; font-size: 1.1rem; text-align: center;"></p>
                     
                     <div id="online-preflop-actions" style="display:none; text-align:center;">
-                        <!-- Se reemplaza por el sistema de turnos (betting-actions) -->
+                        <button class="btn btn-primary" onclick="marcarListoOnline('call')">VOY (Call/Raise) ✅</button>
+                        <button class="btn btn-danger" onclick="marcarListoOnline('fold')">ME RETIRO (Fold) ❌</button>
                     </div>
 
-                    <!-- PANEL DE PREGUNTAS (VALIDACIÓN MATEMÁTICA) -->
                     <div class="math-input-box" id="question-panel">
-                        <h4 style="margin:0 0 10px 0; color:var(--accent);">Llegó tu turno. Calculá la rentabilidad antes de apostar:</h4>
+                        <h4 style="margin:0 0 10px 0; color:var(--accent);">Llegó tu turno. Calculá tu jugada matemática:</h4>
                         <div class="input-group">
                             <label>• <strong>Outs</strong> (¿Cuántas cartas exactas en el mazo te sirven?): </label>
                             <input type="number" id="input-outs" placeholder="Ej: 9">
@@ -652,23 +651,10 @@
                             <label>• <strong>Pot Odds</strong> (Costo de pagar vs Pozo Total en %): </label>
                             <input type="number" id="input-odds" placeholder="Ej: 25">
                         </div>
-                        <div style="margin-top: 20px; border-top:1px solid #444; padding-top:15px;" id="math-submit-area">
-                            <strong style="color:#aaa;">Validá tus cálculos antes de proceder:</strong><br>
-                            <button class="btn btn-primary" style="margin-top:10px; width:100%; padding:15px;" onclick="validarCalculos()">Validar Matemáticas y Ver Mis Opciones ➡️</button>
-                        </div>
-                    </div>
-
-                    <!-- PANEL DE APUESTAS Y TURNOS -->
-                    <div id="betting-actions" style="display:none; text-align:center; padding:20px; background:#111; border-radius:8px; margin-top:15px; border:2px solid #333;">
-                        <h3 style="color:var(--primary); margin-top:0;">Tu Turno de Actuar</h3>
-                        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
-                            <button class="btn btn-danger" style="padding:15px 30px; font-size:1.1rem;" onclick="tomarDecisionPoker('fold')">ME RETIRO (Fold)</button>
-                            <button class="btn btn-info" style="padding:15px 30px; font-size:1.1rem;" onclick="tomarDecisionPoker('call')">IGUALAR (Call/Check) $<span id="lbl-call-amount">0</span></button>
-                        </div>
-                        <div style="background:#222; padding:15px; border-radius:5px; display:inline-block; border:1px solid #444;">
-                            <label style="color:var(--accent); font-weight:bold;">Subir la apuesta:</label><br>
-                            <input type="number" id="input-raise" placeholder="Monto total a subir..." style="padding:10px; border-radius:5px; margin-top:5px; width:150px;">
-                            <button class="btn btn-warning" style="padding:10px 20px;" onclick="tomarDecisionPoker('raise')">SUBIR (Raise)</button>
+                        <div style="margin-top: 20px; border-top:1px solid #444; padding-top:15px;">
+                            <strong style="color:#aaa;">Tomá tu decisión final basándote estrictamente en los números:</strong><br>
+                            <button class="btn btn-primary" style="margin-top:10px;" onclick="submitAnswer('call')">PAGAR / SUBIR (Es Rentable)</button>
+                            <button class="btn btn-danger" id="btn-fold-local" style="margin-top:10px;" onclick="submitAnswer('fold')">TIRARSE (Matemáticamente negativo)</button>
                         </div>
                     </div>
                     
@@ -679,12 +665,17 @@
                         <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar Siguiente Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarNuevaMano()">Siguiente Mano (Rotar Posiciones) 🔄</button>
                         
-                        <!-- BOTONES EXCLUSIVOS MODO ONLINE (Adaptados) -->
+                        <!-- BOTONES EXCLUSIVOS MODO ONLINE -->
+                        <button class="btn btn-accent" id="btn-ready-online" style="display:none;" onclick="marcarListoFaseOnline()">Estoy Listo / Saltear Fase ✅</button>
+                        <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 👑) ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand-host" style="display:none;" onclick="iniciarNuevaManoOnline()">Siguiente Mano (Líder 👑) 🔄</button>
                     </div>
 
-                    <!-- ESTADO DE LISTOS (Oculto, reemplazado por sistema de turnos) -->
-                    <div id="online-ready-status" style="margin-top:15px; font-size:0.95rem; color:#f39c12; display:none; text-align:center; padding:10px; background:#111; border:1px solid #444; border-radius:5px;"></div>
+                    <!-- ESTADO DE LISTOS (VISIBLE PARA TODOS EN ONLINE) -->
+                    <div id="online-ready-status" style="margin-top:15px; font-size:0.95rem; color:#f39c12; display:none; text-align:center; padding:10px; background:#111; border:1px solid #444; border-radius:5px;">
+                        <strong>Estado de Jugadores:</strong> <span id="ready-counter" style="color:var(--primary); font-weight:bold;">0/0 listos</span><br>
+                        <span id="missing-players-list" style="font-size:0.85rem; color:var(--danger);">Falta: ---</span>
+                    </div>
                     
                     <div class="explanation-box" id="explanation-box"></div>
                 </div>
@@ -733,8 +724,8 @@
         let hero = [];
         let jugadoresMesa = [];
         
-        let pot = 0;
-        let apuestaActual = 0;
+        let pot = 300;
+        let apuestaActual = 200;
         let street = 0;
         let totalJugadores = 6;
         let dealerPos = 0;
@@ -749,10 +740,12 @@
         let isShowdown = false;
         let highlightCards = [];
 
-        // NUEVAS VARIABLES PARA ESTADISTICAS INTERNAS Y TURNOS
-        let statsData = { outs: { total: 0, hits: 0 }, prob: { total: 0, hits: 0 }, odds: { total: 0, hits: 0 } };
-        let turnoIndex = 0;
-        let ultimoAgresor = -1;
+        // NUEVAS VARIABLES PARA ESTADISTICAS INTERNAS
+        let statsData = {
+            outs: { total: 0, hits: 0 },
+            prob: { total: 0, hits: 0 },
+            odds: { total: 0, hits: 0 }
+        };
 
         function buildFullDeck() { 
             mazoFull = []; 
@@ -964,6 +957,13 @@
         function avanzarCalleHostOnline() { socket.emit('avanzarCalleHost', miCodigoSala); }
         function iniciarNuevaManoOnline() { socket.emit('siguienteManoOnline', miCodigoSala); }
 
+        function marcarListoFaseOnline() {
+            document.getElementById('btn-ready-online').style.display = 'none';
+            stopTimer();
+            document.getElementById('timer-display').innerText = "Esperando al resto...";
+            socket.emit('jugadorListoFase', { codigo: miCodigoSala });
+        }
+
         if (socket) {
             socket.on('actualizarSalaOnline', (datos) => {
                 miCodigoSala = datos.codigoSala; 
@@ -989,6 +989,7 @@
                 }
             });
 
+            // ✔️ Cambio CLAVE: Recibir las cartas generadas por el Servidor
             socket.on('partidaIniciadaOnline', (data) => {
                 esModoOnline = true; 
                 totalJugadores = document.querySelectorAll('#online-players-list li').length; 
@@ -998,19 +999,29 @@
                 document.getElementById('sidebar-left-hud').style.display = 'none';
                 document.getElementById('sidebar-right-hud').style.display = 'none';
                 document.getElementById('timer-display').style.display = 'block'; 
+                document.getElementById('btn-fold-local').style.display = 'none';
                 
-                // Ocultar Asistente HUD de cálculo en tiempo real en Online
-                document.getElementById('hud-panel').style.display = 'none';
-
                 openView('view-game'); 
-                iniciarMano(data); 
+                iniciarMano(data); // Enviamos la Data para sincronizar
             });
 
+            socket.on('avanzarSiguienteRonda', () => { rankingDataGlobal = []; nextStreet(); });
             socket.on('nuevaManoOnline', (data) => { dealerPos = data.dealerIndex; rankingDataGlobal = []; iniciarMano(data); });
 
-            // Evento para procesar el turno en red (si el backend lo transmite)
-            socket.on('accionPoker', (data) => {
-                procesarAccionPoker(data.jugadorId, data.accion, data.monto, data.statsMath);
+            socket.on('estadoListosActualizado', (data) => {
+                let cantListos = data.jugadores.filter(j => j.listo && j.activo).length; // Filtramos por activos para no contar los fold
+                let cantTotal = data.jugadores.filter(j => j.activo).length;
+                document.getElementById('ready-counter').innerText = `${cantListos}/${cantTotal} listos`;
+                
+                let faltan = data.jugadores.filter(j => !j.listo && j.activo).map(j => j.nombre).join(', ');
+                document.getElementById('missing-players-list').innerText = faltan ? `Falta: ${faltan}` : '¡Todos listos!';
+                
+                // Sincronizamos las inactivaciones (folds) en el cliente
+                data.jugadores.forEach((jSrv) => { 
+                    let jLocal = jugadoresMesa.find(jl => jl.nombre === jSrv.nombre || jl.id === jSrv.id); 
+                    if(jLocal && !jSrv.activo) jLocal.activo = false; 
+                });
+                renderMesaCompleta();
             });
 
             socket.on('resultadoRankingJugador', (data) => {
@@ -1024,6 +1035,18 @@
                 document.getElementById('tbody-ronda').innerHTML = tr1; 
                 document.getElementById('tbody-general').innerHTML = tr2;
             });
+
+            socket.on('todosListosAvanzarFase', () => {
+                if (esAnfitrionSala) avanzarCalleHostOnline();
+            });
+        }
+
+        function marcarListoOnline(accion) {
+            document.getElementById('online-preflop-actions').style.display = 'none'; 
+            document.getElementById('timer-display').innerText = "Esperando resto...";
+            document.getElementById('btn-ready-online').style.display = 'none';
+            socket.emit('jugadorListo', { codigo: miCodigoSala, accion: accion }); 
+            stopTimer();
         }
 
         // ==========================================
@@ -1044,6 +1067,7 @@
             }
             
             document.getElementById('timer-display').style.display = 'none'; 
+            document.getElementById('btn-fold-local').style.display = 'inline-block'; 
             modoActual = modo; 
             openView('view-config'); 
         }
@@ -1052,7 +1076,7 @@
             totalJugadores = parseInt(document.getElementById('select-players').value); 
             dealerPos = Math.floor(Math.random() * totalJugadores); 
             openView('view-game'); 
-            document.getElementById('hud-panel').style.display = (modoActual === 'hud' && !esModoOnline) ? 'block' : 'none'; 
+            document.getElementById('hud-panel').style.display = (modoActual === 'hud') ? 'block' : 'none'; 
             iniciarMano(); 
         }
 
@@ -1079,15 +1103,13 @@
             return "Posición Media (MP)";
         }
 
-        // ==========================================
-        // INICIO DE MANO Y GESTION DE FICHAS/TURNOS
-        // ==========================================
+        // ✔️ Cambio CLAVE: Adaptamos iniciarMano para recibir el mazo del servidor
         function iniciarMano(datosServidor = null) {
             street = 0; isShowdown = false; highlightCards = []; tiempoInicioMano = Date.now(); 
-            pot = 0; apuestaActual = 0;
-            let esPrimeraMano = (jugadoresMesa.length === 0);
+            jugadoresMesa = []; pot = 300; apuestaActual = 200;
 
             if (datosServidor) {
+                // MODO ONLINE: Usamos las cartas dictadas por el Servidor
                 mesa = datosServidor.mesa;
                 let miJugadorData = datosServidor.jugadores.find(j => j.id === socket.id);
                 hero = miJugadorData.cartas;
@@ -1096,24 +1118,19 @@
                 let sbPos = (dealerPos + 1) % numJugadores;
                 let bbPos = (dealerPos + 2) % numJugadores;
 
-                if(esPrimeraMano) {
-                    datosServidor.jugadores.forEach((j) => {
-                        jugadoresMesa.push({ 
-                            id: j.id, nombre: j.nombre, esHero: (j.id === socket.id),
-                            fichas: j.fichas || 10000 
-                        });
+                datosServidor.jugadores.forEach((j, i) => {
+                    let rol = "";
+                    if(i === dealerPos) rol = 'D';
+                    else if (i === sbPos) rol = 'SB';
+                    else if (i === bbPos) rol = 'BB';
+                    
+                    jugadoresMesa.push({ 
+                        id: j.id, nombre: j.nombre, esHero: (j.id === socket.id), rol: rol, 
+                        activo: j.activo, cartas: j.cartas, fichas: j.fichas 
                     });
-                }
-
-                jugadoresMesa.forEach((j, i) => {
-                    let svData = datosServidor.jugadores.find(x => x.id === j.id);
-                    j.rol = (i === dealerPos) ? 'D' : (i === sbPos ? 'SB' : (i === bbPos ? 'BB' : ''));
-                    j.activo = svData.activo; 
-                    j.cartas = svData.cartas;
-                    j.apuestaRonda = 0;
-                    j.esGanador = false;
                 });
             } else {
+                // MODO LOCAL (Manos Infinitas): Lo creamos nosotros mismos
                 buildDeck(); 
                 mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()]; 
                 hero = [mazo.pop(), mazo.pop()];
@@ -1121,42 +1138,58 @@
                 let sbPos = (dealerPos + 1) % totalJugadores;
                 let bbPos = (dealerPos + 2) % totalJugadores;
 
-                if (esPrimeraMano) {
-                    for(let i = 0; i < totalJugadores; i++) {
-                        let isHeroeLocal = (i === 0);
-                        jugadoresMesa.push({ 
-                            id: i, nombre: isHeroeLocal ? 'Tú (Hero)' : `Jugador ${i}`, 
-                            esHero: isHeroeLocal, fichas: 10000 
-                        });
-                    }
+                for(let i = 0; i < totalJugadores; i++) {
+                    let rol = "";
+                    if(i === dealerPos) rol = 'D';
+                    else if (i === sbPos) rol = 'SB';
+                    else if (i === bbPos) rol = 'BB';
+                    
+                    let isHeroeLocal = (i === 0);
+                    let nombreJugador = isHeroeLocal ? 'Tú (Hero)' : `Jugador ${i}`;
+                    let cartasJugador = isHeroeLocal ? hero : [mazo.pop(), mazo.pop()];
+                    
+                    jugadoresMesa.push({ 
+                        id: i, nombre: nombreJugador, esHero: isHeroeLocal, rol: rol, 
+                        activo: true, cartas: cartasJugador, fichas: 10000 
+                    });
                 }
-
-                jugadoresMesa.forEach((j, i) => {
-                    j.rol = (i === dealerPos) ? 'D' : (i === sbPos ? 'SB' : (i === bbPos ? 'BB' : ''));
-                    j.activo = true; 
-                    j.cartas = j.esHero ? hero : [mazo.pop(), mazo.pop()];
-                    j.apuestaRonda = 0;
-                    j.esGanador = false;
-                });
             }
 
             posicionNombre = calcularPosicionNombre(0, dealerPos, esModoOnline ? datosServidor.jugadores.length : totalJugadores);
             document.getElementById('hud-position').innerText = posicionNombre;
+            renderMesaCompleta();
             
-            // Ocultar UI previa
             document.getElementById('question-panel').style.display = 'none'; 
-            document.getElementById('betting-actions').style.display = 'none';
-            document.getElementById('btn-next-street').style.display = 'none'; 
+            document.getElementById('btn-next-street').style.display = esModoOnline ? 'none' : 'inline-block'; 
             document.getElementById('btn-next-hand').style.display = 'none'; 
+            document.getElementById('btn-next-street-host').style.display = 'none';
             document.getElementById('btn-next-hand-host').style.display = 'none';
             document.getElementById('btn-explain').style.display = 'none'; 
             document.getElementById('explanation-box').style.display = 'none'; 
             document.getElementById('result-message').innerText = ''; 
-            document.getElementById('street-name').innerText = "PRE-FLOP"; 
             
-            if(modoActual === 'hud' && !esModoOnline) actualizarHUDMatematico();
+            document.getElementById('street-name').innerText = "PRE-FLOP"; 
+            document.getElementById('opponent-action').innerText = "Ciegas 100/200 colocadas.";
+            
+            // ✔️ Cambio CLAVE: Validar si somos activos y lanzar Timer de Pre-Flop (10s)
+            let miJugadorLocal = jugadoresMesa.find(j => j.esHero);
+            let estoyActivo = miJugadorLocal ? miJugadorLocal.activo : true;
 
-            iniciarRondaApuestas();
+            if(esModoOnline) { 
+                if (estoyActivo) {
+                    document.getElementById('online-preflop-actions').style.display = 'block'; 
+                    document.getElementById('online-ready-status').style.display = 'block'; 
+                    document.getElementById('btn-ready-online').style.display = 'none'; 
+                    iniciarTimer(10, () => marcarListoOnline('fold')); // 10s y auto-fold si no elige
+                } else {
+                    document.getElementById('online-preflop-actions').style.display = 'none'; 
+                    document.getElementById('timer-display').innerText = "Folded (Esperando a la mesa)";
+                }
+            } else { 
+                document.getElementById('online-preflop-actions').style.display = 'none'; 
+            }
+
+            if(modoActual === 'hud') actualizarHUDMatematico();
         }
 
         function iniciarNuevaMano() { dealerPos = (dealerPos + 1) % totalJugadores; iniciarMano(); }
@@ -1184,6 +1217,7 @@
             
             const radioX = 350; const radioY = 200; const centroX = 425; const centroY = 250; 
             let isHudMode = (modoActual === 'hud');
+            
             let cantidadMesa = esModoOnline ? jugadoresMesa.length : totalJugadores;
 
             jugadoresMesa.forEach((jugador, indice) => {
@@ -1193,213 +1227,42 @@
                 
                 let div = document.createElement('div');
                 let extraClasses = "";
-                if(!jugador.activo) extraClasses += " fold-red"; 
+                if(!jugador.activo) extraClasses += " fold-red"; // Visualizamos a los retirados
                 if(isShowdown && jugador.esGanador) extraClasses += " win-green";
                 if(isShowdown && !jugador.esGanador && jugador.activo) extraClasses += " lose-yellow";
-                if(indice === turnoIndex && jugador.activo && !isShowdown) extraClasses += " turn-active"; // Highlight
                 
                 div.className = `seat ${extraClasses}`;
                 div.style.left = `${posLeft}px`; div.style.top = `${posTop}px`;
-                if(indice === turnoIndex && !isShowdown) {
-                    div.style.boxShadow = "0 0 20px var(--accent)";
-                    div.style.borderColor = "var(--accent)";
-                }
                 
                 let divHtml = '';
                 if (jugador.rol) divHtml += `<span class="badge badge-${jugador.rol.toLowerCase()}">${jugador.rol}</span><br>`;
                 let colorNombre = jugador.activo ? '#fff' : '#888';
                 divHtml += `<strong style="color:${colorNombre}">${jugador.nombre}</strong><br><small>$${jugador.fichas}</small>`;
                 
-                // MODO ONLINE: Sólo se ven las cartas del hero, o de todos si hay showdown
-                // MODO LOCAL HUD/INFINITAS: Aplican reglas de visibilidad local
-                let mostrarCartas = jugador.esHero || (isHudMode && jugador.activo && !esModoOnline) || (!esModoOnline && modoActual === 'infinitas');
+                let mostrarCartas = jugador.esHero || (isHudMode && jugador.activo);
 
                 if(mostrarCartas && street < 4 && jugador.activo && !isShowdown) {
                     divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div>`;
-                    if (isHudMode && street > 0 && !esModoOnline) {
+                    if (isHudMode && street > 0) {
                         let jRes = evaluarMejorMano(jugador.cartas, boardActual);
                         divHtml += `<div class="mini-stats">${jRes.nombre}</div>`;
                     }
                 } else if(jugador.activo && street < 4 && !isShowdown) {
                     divHtml += `<div class="cards-container">${renderCard({},true)}${renderCard({},true)}</div>`;
                 } else if(isShowdown && jugador.activo) {
-                    divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div><small style="color:var(--accent);">${jugador.nombreMano}</small>`;
+                    let forzarVisibles = (modoActual === 'infinitas' || modoActual === 'hud' || esModoOnline);
+                    if(forzarVisibles) {
+                        divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div><small style="color:var(--accent);">${jugador.nombreMano}</small>`;
+                    } else {
+                        divHtml += `<div class="cards-container">${renderCard({},true)}${renderCard({},true)}</div>`;
+                    }
                 }
                 
                 div.innerHTML = divHtml;
                 container.appendChild(div);
             });
             
-            if(isHudMode && !esModoOnline) actualizarTableroAnalisisHUD(boardActual);
-        }
-
-        // ==========================================
-        // SISTEMA DE TURNOS Y APUESTAS
-        // ==========================================
-        function hayJugadoresActivos() {
-            return jugadoresMesa.filter(j => j.activo).length;
-        }
-
-        function iniciarRondaApuestas() {
-            jugadoresMesa.forEach(j => j.apuestaRonda = 0);
-            apuestaActual = 0;
-
-            if (street === 0) { 
-                // Colocar ciegas automáticas
-                let sbIdx = (dealerPos + 1) % totalJugadores;
-                let bbIdx = (dealerPos + 2) % totalJugadores;
-                
-                // Deduct Fichas
-                jugadoresMesa[sbIdx].fichas -= 100;
-                jugadoresMesa[sbIdx].apuestaRonda = 100;
-                jugadoresMesa[bbIdx].fichas -= 200;
-                jugadoresMesa[bbIdx].apuestaRonda = 200;
-                pot += 300;
-                apuestaActual = 200;
-
-                // El primer turno en Pre-Flop es UTG (bbPos + 1)
-                turnoIndex = (bbIdx + 1) % totalJugadores;
-                ultimoAgresor = bbIdx; // El Big Blind es el último agresor por defecto
-            } else {
-                // Pos-Flop: Empieza SB
-                turnoIndex = (dealerPos + 1) % totalJugadores;
-                ultimoAgresor = -1; // Se setea al primer jugador activo
-            }
-
-            // Acomodar al primer jugador activo real
-            while(!jugadoresMesa[turnoIndex].activo && hayJugadoresActivos() > 1) {
-                turnoIndex = (turnoIndex + 1) % totalJugadores;
-            }
-            if (street > 0 && ultimoAgresor === -1) ultimoAgresor = turnoIndex;
-
-            renderMesaCompleta();
-            gestionarUI_Turno();
-        }
-
-        function avanzarTurnoLocal() {
-            let cantActivos = hayJugadoresActivos();
-            if (cantActivos <= 1) {
-                street = 3; // Salto directo al River/Showdown si todos foldearon
-                resolverShowdownFinal();
-                return;
-            }
-
-            let inicioIntento = turnoIndex;
-            do {
-                turnoIndex = (turnoIndex + 1) % totalJugadores;
-            } while (!jugadoresMesa[turnoIndex].activo && turnoIndex !== inicioIntento);
-
-            if (turnoIndex === ultimoAgresor) {
-                // Todos igualaron o pasaron. Siguiente calle.
-                if (esAnfitrionSala || !esModoOnline) {
-                    setTimeout(() => nextStreet(), 1000); 
-                } else {
-                    document.getElementById('opponent-action').innerText = "Ronda terminada. Esperando avance de cartas...";
-                }
-                return;
-            }
-
-            renderMesaCompleta();
-            gestionarUI_Turno();
-        }
-
-        function gestionarUI_Turno() {
-            let jActual = jugadoresMesa[turnoIndex];
-
-            if (jActual.esHero) {
-                document.getElementById('opponent-action').innerHTML = "🟢 <strong>¡ES TU TURNO DE ACTUAR!</strong>";
-                
-                let costoParaMi = apuestaActual - (jActual.apuestaRonda || 0);
-                if (costoParaMi < 0) costoParaMi = 0;
-                document.getElementById('lbl-call-amount').innerText = costoParaMi === 0 ? " (Pasar/Check)" : costoParaMi;
-                document.getElementById('input-raise').placeholder = `Min: $${apuestaActual + 200}`;
-
-                if (street === 0 || modoActual === 'infinitas') {
-                    // Preflop o modo sin matemáticas -> Acción Directa
-                    document.getElementById('question-panel').style.display = 'none';
-                    document.getElementById('betting-actions').style.display = 'block';
-                    document.getElementById('explanation-box').style.display = 'none';
-                } else {
-                    // Flop / Turn -> Obligatorio Calcular primero
-                    document.getElementById('question-panel').style.display = 'block';
-                    document.getElementById('math-submit-area').style.display = 'block';
-                    document.getElementById('betting-actions').style.display = 'none';
-                    document.getElementById('explanation-box').style.display = 'none';
-                    document.getElementById('input-outs').value = ''; 
-                    document.getElementById('input-prob').value = ''; 
-                    document.getElementById('input-odds').value = '';
-                    calcularMatematicaInterna(); // Calcula las respuestas correctas por detrás
-                }
-            } else {
-                document.getElementById('opponent-action').innerHTML = `⏳ Esperando que <strong>${jActual.nombre}</strong> tome una decisión...`;
-                document.getElementById('question-panel').style.display = 'none';
-                document.getElementById('betting-actions').style.display = 'none';
-
-                // Bot local (IA básica para que la práctica local funcione)
-                if (!esModoOnline) {
-                    setTimeout(() => {
-                        let diff = apuestaActual - (jActual.apuestaRonda || 0);
-                        if (Math.random() < 0.15 && diff > 0) {
-                            procesarAccionPoker(jActual.id, 'fold', 0);
-                        } else if (Math.random() < 0.8 || diff === 0) {
-                            procesarAccionPoker(jActual.id, 'call', 0);
-                        } else {
-                            procesarAccionPoker(jActual.id, 'raise', apuestaActual + 200);
-                        }
-                    }, 1500);
-                }
-            }
-        }
-
-        function tomarDecisionPoker(decision) {
-            document.getElementById('betting-actions').style.display = 'none';
-            document.getElementById('question-panel').style.display = 'none';
-            document.getElementById('explanation-box').style.display = 'none';
-
-            let monto = apuestaActual; // Por defecto el monto de la mesa
-            if (decision === 'raise') {
-                monto = parseInt(document.getElementById('input-raise').value);
-                if (!monto || monto < apuestaActual + 200) return alert("Debes subir a un monto mayor que la apuesta actual (mínimo sumando ciega grande).");
-            }
-
-            if (esModoOnline && socket) {
-                // Emitir la jugada a los demás clientes
-                socket.emit('accionPoker', {
-                    codigo: miCodigoSala,
-                    jugadorId: socket.id,
-                    accion: decision,
-                    monto: monto,
-                    statsMath: null
-                });
-                // Procesar localmente al instante para evitar lag UI
-                procesarAccionPoker(socket.id, decision, monto);
-            } else {
-                let heroId = jugadoresMesa.find(j=>j.esHero).id;
-                procesarAccionPoker(heroId, decision, monto);
-            }
-        }
-
-        function procesarAccionPoker(idJugador, accion, monto, statsMath = null) {
-            let j = jugadoresMesa.find(x => x.id === idJugador);
-            if(!j) return;
-
-            if (accion === 'fold') {
-                j.activo = false;
-            } else if (accion === 'call') {
-                let costo = apuestaActual - (j.apuestaRonda || 0);
-                j.fichas -= costo;
-                j.apuestaRonda = apuestaActual;
-                pot += costo;
-            } else if (accion === 'raise') {
-                let extra = monto - (j.apuestaRonda || 0);
-                j.fichas -= extra;
-                j.apuestaRonda = monto;
-                apuestaActual = monto;
-                pot += extra;
-                ultimoAgresor = jugadoresMesa.indexOf(j); // Se convierte en el nuevo agresor
-            }
-
-            avanzarTurnoLocal();
+            if(isHudMode) actualizarTableroAnalisisHUD(boardActual);
         }
 
         // ==========================================
@@ -1463,6 +1326,9 @@
             return {score: kicker, nombre: "Carta Alta", coreCards: []}; 
         }
 
+        // ==========================================
+        // EXPLICACIÓN Y TEORÍA HUD LATERAL
+        // ==========================================
         function actualizarTableroAnalisisHUD(boardActual) {
             let trs = "";
             jugadoresMesa.forEach(j => {
@@ -1490,14 +1356,7 @@
             
             correctOuts = maxP === 4 ? 9 : (Math.floor(Math.random() * 5) + 3); 
             correctProb = correctOuts * (street === 1 ? 4 : 2); 
-            
-            // Calculo correcto de Pot Odds Reales
-            let miJugadorLocal = jugadoresMesa.find(j => j.esHero);
-            let miApuestaRonda = miJugadorLocal ? (miJugadorLocal.apuestaRonda || 0) : 0;
-            let costoParaMi = apuestaActual - miApuestaRonda;
-            if(costoParaMi < 0) costoParaMi = 0;
-            
-            correctOdds = costoParaMi === 0 ? 0 : (costoParaMi / (pot + costoParaMi)) * 100; 
+            correctOdds = (apuestaActual / (pot + apuestaActual)) * 100; 
             realAction = correctProb >= correctOdds ? 'call' : 'fold';
         }
 
@@ -1513,7 +1372,7 @@
             }
             document.getElementById('hud-odds').innerHTML = `${correctOdds.toFixed(1)}%`; 
             
-            if (modoActual === 'hud' && !esModoOnline) {
+            if (modoActual === 'hud') {
                 let esRentable = correctProb >= correctOdds;
                 let consejoLibros = esRentable 
                     ? "Según la <strong>Teoría Fundamental del Póker (Sklansky)</strong>, tenés ventaja matemática. Hacer CALL o RAISE ahora maximiza tus ganancias a largo plazo porque las Pot Odds te son favorables." 
@@ -1523,13 +1382,11 @@
                     ? "En el Pre-Flop evaluamos la fuerza base de tu mano. Oponentes suelen jugar con rangos cerrados desde posiciones tempranas (UTG) y más abiertos desde el Botón."
                     : `Para calcular tu probabilidad en el ${street===1 ? 'Flop' : 'Turn'}, buscamos las <strong>Outs</strong> y aplicamos la <strong>Regla del ${multiplicador}</strong>.`;
 
-                let costoMio = apuestaActual - (jugadoresMesa.find(j=>j.esHero).apuestaRonda || 0);
-
                 let teoriaHtml = `
                     <p>${textoReglas}</p>
                     <div style="background:#222; padding:8px; border-radius:5px; margin-top:10px;">
                         <strong style="color:var(--info);">💰 Cuenta de Pot Odds:</strong><br>
-                        ${costoMio} (Costo) &divide; [ ${pot} + ${costoMio} ] &times; 100 = <strong>${correctOdds.toFixed(1)}%</strong>
+                        ${apuestaActual} (Costo) &divide; [ ${pot} + ${apuestaActual} ] &times; 100 = <strong>${correctOdds.toFixed(1)}%</strong>
                     </div>
                     <div style="background:#222; padding:10px; border-radius:5px; margin-top:15px; border-left: 4px solid ${esRentable ? 'var(--primary)' : 'var(--danger)'};">
                         <strong>Consejo de Academia:</strong><br> 
@@ -1541,7 +1398,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE CALLES Y VALIDACIÓN MATEMÁTICA
+        // LÓGICA DE CALLES Y DECISIONES
         // ==========================================
         function nextStreet() {
             street++; 
@@ -1554,14 +1411,52 @@
             else if(street === 3) { 
                 document.getElementById('street-name').innerText = "RIVER (5 cartas)"; 
                 document.getElementById('btn-next-street').style.display = 'none'; 
+                if(!esModoOnline) document.getElementById('btn-next-hand').style.display = 'inline-block'; 
                 return resolverShowdownFinal(); 
             }
             
-            iniciarRondaApuestas();
-            if(modoActual === 'hud' && !esModoOnline) actualizarHUDMatematico();
+            let maxBet = 0; 
+            jugadoresMesa.forEach(j => { 
+                if(j.esHero || !j.activo) return; 
+                let randomDec = Math.random();
+                if(randomDec < 0.2 && !esModoOnline) { j.activo = false; j.accion = "Fold"; } 
+                else if(randomDec < 0.6) { pot += 200; j.accion = "Iguala"; } 
+                else { pot += 400; maxBet = 400; } 
+            });
+            
+            apuestaActual = maxBet || 200; 
+            document.getElementById('opponent-action').innerText = `Apuesta enemiga de $${apuestaActual}. ¡Hora de Calcular!`; 
+            renderMesaCompleta();
+            
+            let miJugadorLocal = jugadoresMesa.find(j => j.esHero);
+            let estoyActivo = miJugadorLocal ? miJugadorLocal.activo : true;
+
+            // ✔️ Cambio CLAVE: Comprobación estricta de Fold. Si estás fold, no calculas.
+            if(street < 3 && modoActual !== 'hud') { 
+                if(!esModoOnline) document.getElementById('btn-next-street').style.display = 'none'; 
+
+                if (estoyActivo) {
+                    calcularMatematicaInterna(); 
+                    document.getElementById('question-panel').style.display = 'block'; 
+                    document.getElementById('input-outs').value = ''; 
+                    document.getElementById('input-prob').value = ''; 
+                    document.getElementById('input-odds').value = ''; 
+                    
+                    if(esModoOnline) { 
+                        if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'none'; 
+                        document.getElementById('btn-ready-online').style.display = 'none';
+                        iniciarTimer(20, () => submitAnswer('fold')); // 20s Para CALCULAR
+                    }
+                } else {
+                    document.getElementById('question-panel').style.display = 'none'; 
+                    if(esModoOnline) document.getElementById('timer-display').innerText = "Estás fuera de esta mano (Fold).";
+                }
+            } else if(modoActual === 'hud') {
+                actualizarHUDMatematico();
+            }
         }
 
-        function validarCalculos() {
+        function submitAnswer(decision) {
             let userOuts = parseInt(document.getElementById('input-outs').value) || 0;
             let userProb = parseFloat(document.getElementById('input-prob').value) || 0;
             let userOdds = parseFloat(document.getElementById('input-odds').value) || 0;
@@ -1569,23 +1464,49 @@
             let esOutsOk = Math.abs(userOuts - correctOuts) <= 1;
             let esProbOk = Math.abs(userProb - correctProb) <= 4;
             let esOddsOk = Math.abs(userOdds - correctOdds) <= 4;
-            let aciertoGlobal = esOutsOk && esProbOk && esOddsOk;
+            let esDecisionOk = decision === realAction;
+            let aciertoGlobal = esOutsOk && esProbOk && esOddsOk && esDecisionOk;
             
-            statsData.outs.total++; if(esOutsOk) statsData.outs.hits++;
-            statsData.prob.total++; if(esProbOk) statsData.prob.hits++;
-            statsData.odds.total++; if(esOddsOk) statsData.odds.hits++;
+            statsData.outs.total++;
+            if(esOutsOk) statsData.outs.hits++;
+            
+            statsData.prob.total++;
+            if(esProbOk) statsData.prob.hits++;
+            
+            statsData.odds.total++;
+            if(esOddsOk) statsData.odds.hits++;
+            
             actualizarPantallaEstadisticas();
 
             let msgBox = document.getElementById('result-message');
-            msgBox.innerHTML = aciertoGlobal ? "✅ ¡Cálculos Perfectos! Ahora toma tu decisión." : "❌ Hay errores en tus cálculos. Lee la explicación antes de actuar."; 
+            msgBox.innerHTML = aciertoGlobal ? "✅ ¡Cálculos Perfectos!" : "❌ Hay errores en tus cálculos matemáticos."; 
             msgBox.style.color = aciertoGlobal ? "var(--primary)" : "var(--danger)";
             
-            // Ocultar sección de envío matemático y MOSTRAR controles de apuesta
-            document.getElementById('math-submit-area').style.display = 'none';
-            document.getElementById('betting-actions').style.display = 'block';
-            document.getElementById('btn-explain').style.display = 'inline-block';
+            document.getElementById('question-panel').style.display = 'none';
+            let tiempoTardado = ((Date.now() - tiempoInicioMano) / 1000).toFixed(1);
             
-            let costo = apuestaActual - (jugadoresMesa.find(j=>j.esHero).apuestaRonda || 0);
+            // ✔️ Cambio CLAVE: La fase de explicación y su temporizador independiente de 20s
+            if(esModoOnline && socket) { 
+                socket.emit('enviarCalculoOnline', {
+                    codigo: miCodigoSala, nombre: miNombreOnline, outs: userOuts, outsCorrecto: esOutsOk, 
+                    porcentaje: userProb, probCorrecto: esProbOk, potOdds: userOdds, oddsCorrecto: esOddsOk, 
+                    tiempoSegundos: tiempoTardado
+                }); 
+                socket.emit('jugadorListo', { codigo: miCodigoSala, accion: decision }); 
+                
+                document.getElementById('btn-explain').style.display = 'inline-block';
+                document.getElementById('btn-ready-online').style.display = 'inline-block';
+                if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'inline-block'; 
+                
+                document.getElementById('explanation-box').style.display = 'block'; // Muestra explicación inmediato
+                
+                // 20s dedicados puramente a leer y entender el error
+                iniciarTimer(20, () => marcarListoFaseOnline()); 
+            } else { 
+                document.getElementById('btn-explain').style.display = 'inline-block'; 
+                document.getElementById('btn-next-street').style.display = 'inline-block'; 
+                document.getElementById('explanation-box').style.display = 'block'; 
+            }
             
             let reglaTexto = street === 1 
                 ? "En el Flop usamos la <strong>Regla del 4</strong> (multiplicamos tus outs x4 porque todavía faltan 2 cartas por salir)." 
@@ -1593,24 +1514,15 @@
                 
             let strHtml = `
                 <strong style="color:var(--accent); font-size:1.1rem;">💡 Análisis Detallado de tu Situación:</strong><br><br>
-                1️⃣ <strong>Outs Encontrados (${correctOuts}):</strong> Las "outs" son las cartas exactas que quedan sin repartir en el mazo y que mejoran tu mano para hacerla ganadora.<br><br>
+                1️⃣ <strong>Outs Encontrados (${correctOuts}):</strong> Las "outs" son las cartas exactas que quedan sin repartir en el mazo y que mejoran tu mano para hacerla ganadora. En esta situación tenías <strong>${correctOuts} outs</strong>.<br><br>
                 2️⃣ <strong>Probabilidad Estimada (${correctProb}%):</strong> Para calcular esto mentalmente en la mesa, ${reglaTexto}<br>
                 <em>Cuenta Matemática: ${correctOuts} outs &times; ${street===1?4:2} = ${correctProb}%.</em><br><br>
-                3️⃣ <strong>Pot Odds Requeridas (${correctOdds.toFixed(1)}%):</strong> El pozo acumulado hasta ahora más tu propio costo suman $${pot+costo}. Vos tenés que poner $${costo} para seguir.<br>
-                <em>Cuenta Matemática: Costo ($${costo}) &divide; Pozo Total con tu call ($${pot+costo}) &times; 100 = ${correctOdds.toFixed(1)}%.</em><br><br>
-                4️⃣ <strong>Decisión Final Matemática:</strong> Como tu probabilidad real (${correctProb}%) es <strong>${correctProb >= correctOdds ? 'MAYOR/IGUAL' : 'MENOR'}</strong> que la exigencia del pozo (${correctOdds.toFixed(1)}%), la matemática pura nos indica que la jugada correcta es <strong>${realAction.toUpperCase()}</strong>.
+                3️⃣ <strong>Pot Odds Requeridas (${correctOdds.toFixed(1)}%):</strong> El pozo acumulado más las apuestas suman $${pot+apuestaActual}. Vos tenés que poner $${apuestaActual} para seguir en la mano.<br>
+                <em>Cuenta Matemática: Costo ($${apuestaActual}) &divide; Pozo Total ($${pot+apuestaActual}) &times; 100 = ${correctOdds.toFixed(1)}%.</em><br>
+                Esto significa que matemáticamente necesitás completar tu mano al menos el ${correctOdds.toFixed(1)}% de las veces para que sea una decisión rentable a largo plazo.<br><br>
+                4️⃣ <strong>Decisión Final de la Academia:</strong> Como tu probabilidad real de ganar (${correctProb}%) es <strong>${correctProb >= correctOdds ? 'MAYOR' : 'MENOR'}</strong> que la exigencia del pozo (${correctOdds.toFixed(1)}%), la matemática pura nos indica que la jugada correcta es <strong>${realAction.toUpperCase()}</strong>.
             `;
             document.getElementById('explanation-box').innerHTML = strHtml;
-            document.getElementById('explanation-box').style.display = 'block';
-
-            if(esModoOnline && socket) { 
-                let tiempoTardado = ((Date.now() - tiempoInicioMano) / 1000).toFixed(1);
-                socket.emit('enviarCalculoOnline', {
-                    codigo: miCodigoSala, nombre: miNombreOnline, outs: userOuts, outsCorrecto: esOutsOk, 
-                    porcentaje: userProb, probCorrecto: esProbOk, potOdds: userOdds, oddsCorrecto: esOddsOk, 
-                    tiempoSegundos: tiempoTardado
-                }); 
-            }
         }
 
         // ==========================================
@@ -1647,6 +1559,7 @@
 
         function getAdviceText(category, pct, total) {
             if(total === 0) return "Juega algunas manos en Práctica Libre para recibir un diagnóstico automatizado sobre tu nivel.";
+            
             if(pct >= 80) return "🔥 <strong>¡Nivel Pro!</strong> Estás dominando esta habilidad a la perfección. ¡Sigue así!";
             
             if(category === 'outs') {
@@ -1683,21 +1596,16 @@
                 if(j.activo) j.esGanador = (j.id === ganadorFinal.id); 
             }); 
             
-            // Recompensar al ganador con el Pozo (Chips Reales)
-            ganadorFinal.fichas += pot;
-
             renderMesaCompleta();
             
             let showdownTexto = ganadorFinal.esHero 
-                ? `¡Ganaste la mano con <strong>${ganadorFinal.nombreMano}</strong> y te llevas el pozo de $${pot}! 🏆` 
-                : `¡<strong>${ganadorFinal.nombre}</strong> ganó la mano con <strong>${ganadorFinal.nombreMano}</strong> y se lleva $${pot}!`;
-            pot = 0; // Se vacía el pozo al finalizar
-
+                ? `¡Ganaste la mano con <strong>${ganadorFinal.nombreMano}</strong>! 🏆` 
+                : `¡<strong>${ganadorFinal.nombre}</strong> ganó la mano con <strong>${ganadorFinal.nombreMano}</strong>!`;
+            
             document.getElementById('opponent-action').innerHTML = `<strong>SHOWDOWN:</strong> ${showdownTexto}`;
-            if (!esModoOnline) {
-                document.getElementById('btn-next-hand').style.display = 'inline-block';
-            } else if (esModoOnline && esAnfitrionSala) {
-                document.getElementById('btn-next-hand-host').style.display = 'inline-block';
+            if(esModoOnline) {
+                document.getElementById('btn-ready-online').style.display = 'inline-block';
+                if(esAnfitrionSala) document.getElementById('btn-next-hand-host').style.display = 'inline-block';
             }
         }
 
@@ -1727,4 +1635,4 @@
         }
     </script>
 </body>
-</html>
+</html> 
