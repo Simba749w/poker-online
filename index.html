@@ -959,6 +959,8 @@
 
         function marcarListoFaseOnline() {
             document.getElementById('btn-ready-online').style.display = 'none';
+            stopTimer();
+            document.getElementById('timer-display').innerText = "Esperando al resto...";
             socket.emit('jugadorListoFase', { codigo: miCodigoSala });
         }
 
@@ -987,6 +989,7 @@
                 }
             });
 
+            // ✔️ Cambio CLAVE: Recibir las cartas generadas por el Servidor
             socket.on('partidaIniciadaOnline', (data) => {
                 esModoOnline = true; 
                 totalJugadores = document.querySelectorAll('#online-players-list li').length; 
@@ -999,20 +1002,21 @@
                 document.getElementById('btn-fold-local').style.display = 'none';
                 
                 openView('view-game'); 
-                iniciarMano();
+                iniciarMano(data); // Enviamos la Data para sincronizar
             });
 
             socket.on('avanzarSiguienteRonda', () => { rankingDataGlobal = []; nextStreet(); });
-            socket.on('nuevaManoOnline', (data) => { dealerPos = data.dealerIndex; rankingDataGlobal = []; iniciarMano(); });
+            socket.on('nuevaManoOnline', (data) => { dealerPos = data.dealerIndex; rankingDataGlobal = []; iniciarMano(data); });
 
             socket.on('estadoListosActualizado', (data) => {
-                let cantListos = data.jugadores.filter(j => j.listo).length;
-                let cantTotal = data.jugadores.length;
+                let cantListos = data.jugadores.filter(j => j.listo && j.activo).length; // Filtramos por activos para no contar los fold
+                let cantTotal = data.jugadores.filter(j => j.activo).length;
                 document.getElementById('ready-counter').innerText = `${cantListos}/${cantTotal} listos`;
                 
-                let faltan = data.jugadores.filter(j => !j.listo).map(j => j.nombre).join(', ');
+                let faltan = data.jugadores.filter(j => !j.listo && j.activo).map(j => j.nombre).join(', ');
                 document.getElementById('missing-players-list').innerText = faltan ? `Falta: ${faltan}` : '¡Todos listos!';
                 
+                // Sincronizamos las inactivaciones (folds) en el cliente
                 data.jugadores.forEach((jSrv) => { 
                     let jLocal = jugadoresMesa.find(jl => jl.nombre === jSrv.nombre || jl.id === jSrv.id); 
                     if(jLocal && !jSrv.activo) jLocal.activo = false; 
@@ -1031,7 +1035,7 @@
                 document.getElementById('tbody-ronda').innerHTML = tr1; 
                 document.getElementById('tbody-general').innerHTML = tr2;
             });
-            // Novedad: El servidor nos dice que todos ya están listos, avanzamos fase automáticamente
+
             socket.on('todosListosAvanzarFase', () => {
                 if (esAnfitrionSala) avanzarCalleHostOnline();
             });
@@ -1099,33 +1103,59 @@
             return "Posición Media (MP)";
         }
 
-        function iniciarMano() {
-            buildDeck(); 
-            mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()]; 
-            hero = [mazo.pop(), mazo.pop()];
+        // ✔️ Cambio CLAVE: Adaptamos iniciarMano para recibir el mazo del servidor
+        function iniciarMano(datosServidor = null) {
             street = 0; isShowdown = false; highlightCards = []; tiempoInicioMano = Date.now(); 
             jugadoresMesa = []; pot = 300; apuestaActual = 200;
-            
-            let sbPos = (dealerPos + 1) % totalJugadores;
-            let bbPos = (dealerPos + 2) % totalJugadores;
 
-            for(let i = 0; i < totalJugadores; i++) {
-                let rol = "";
-                if(i === dealerPos) rol = 'D';
-                else if (i === sbPos) rol = 'SB';
-                else if (i === bbPos) rol = 'BB';
+            if (datosServidor) {
+                // MODO ONLINE: Usamos las cartas dictadas por el Servidor
+                mesa = datosServidor.mesa;
+                let miJugadorData = datosServidor.jugadores.find(j => j.id === socket.id);
+                hero = miJugadorData.cartas;
                 
-                let isHeroeLocal = (i === 0);
-                let nombreJugador = isHeroeLocal ? (esModoOnline ? miNombreOnline : 'Tú (Hero)') : `Jugador ${i}`;
-                let cartasJugador = isHeroeLocal ? hero : [mazo.pop(), mazo.pop()];
-                
-                jugadoresMesa.push({ 
-                    id: i, nombre: nombreJugador, esHero: isHeroeLocal, rol: rol, 
-                    activo: true, cartas: cartasJugador, fichas: 10000 
+                let numJugadores = datosServidor.jugadores.length;
+                let sbPos = (dealerPos + 1) % numJugadores;
+                let bbPos = (dealerPos + 2) % numJugadores;
+
+                datosServidor.jugadores.forEach((j, i) => {
+                    let rol = "";
+                    if(i === dealerPos) rol = 'D';
+                    else if (i === sbPos) rol = 'SB';
+                    else if (i === bbPos) rol = 'BB';
+                    
+                    jugadoresMesa.push({ 
+                        id: j.id, nombre: j.nombre, esHero: (j.id === socket.id), rol: rol, 
+                        activo: j.activo, cartas: j.cartas, fichas: j.fichas 
+                    });
                 });
+            } else {
+                // MODO LOCAL (Manos Infinitas): Lo creamos nosotros mismos
+                buildDeck(); 
+                mesa = [mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop(), mazo.pop()]; 
+                hero = [mazo.pop(), mazo.pop()];
+                
+                let sbPos = (dealerPos + 1) % totalJugadores;
+                let bbPos = (dealerPos + 2) % totalJugadores;
+
+                for(let i = 0; i < totalJugadores; i++) {
+                    let rol = "";
+                    if(i === dealerPos) rol = 'D';
+                    else if (i === sbPos) rol = 'SB';
+                    else if (i === bbPos) rol = 'BB';
+                    
+                    let isHeroeLocal = (i === 0);
+                    let nombreJugador = isHeroeLocal ? 'Tú (Hero)' : `Jugador ${i}`;
+                    let cartasJugador = isHeroeLocal ? hero : [mazo.pop(), mazo.pop()];
+                    
+                    jugadoresMesa.push({ 
+                        id: i, nombre: nombreJugador, esHero: isHeroeLocal, rol: rol, 
+                        activo: true, cartas: cartasJugador, fichas: 10000 
+                    });
+                }
             }
 
-            posicionNombre = calcularPosicionNombre(0, dealerPos, totalJugadores);
+            posicionNombre = calcularPosicionNombre(0, dealerPos, esModoOnline ? datosServidor.jugadores.length : totalJugadores);
             document.getElementById('hud-position').innerText = posicionNombre;
             renderMesaCompleta();
             
@@ -1141,15 +1171,24 @@
             document.getElementById('street-name').innerText = "PRE-FLOP"; 
             document.getElementById('opponent-action').innerText = "Ciegas 100/200 colocadas.";
             
+            // ✔️ Cambio CLAVE: Validar si somos activos y lanzar Timer de Pre-Flop (10s)
+            let miJugadorLocal = jugadoresMesa.find(j => j.esHero);
+            let estoyActivo = miJugadorLocal ? miJugadorLocal.activo : true;
+
             if(esModoOnline) { 
-                document.getElementById('online-preflop-actions').style.display = 'block'; 
-                document.getElementById('online-ready-status').style.display = 'block'; 
-                document.getElementById('btn-ready-online').style.display = 'none'; // Se oculta en esta fase
-                // Pre-flop timer de 10s y si no presiona nada, hace auto-fold según los requisitos.
-                iniciarTimer(10, () => marcarListoOnline('fold')); 
+                if (estoyActivo) {
+                    document.getElementById('online-preflop-actions').style.display = 'block'; 
+                    document.getElementById('online-ready-status').style.display = 'block'; 
+                    document.getElementById('btn-ready-online').style.display = 'none'; 
+                    iniciarTimer(10, () => marcarListoOnline('fold')); // 10s y auto-fold si no elige
+                } else {
+                    document.getElementById('online-preflop-actions').style.display = 'none'; 
+                    document.getElementById('timer-display').innerText = "Folded (Esperando a la mesa)";
+                }
             } else { 
                 document.getElementById('online-preflop-actions').style.display = 'none'; 
             }
+
             if(modoActual === 'hud') actualizarHUDMatematico();
         }
 
@@ -1179,14 +1218,16 @@
             const radioX = 350; const radioY = 200; const centroX = 425; const centroY = 250; 
             let isHudMode = (modoActual === 'hud');
             
+            let cantidadMesa = esModoOnline ? jugadoresMesa.length : totalJugadores;
+
             jugadoresMesa.forEach((jugador, indice) => {
-                let anguloEnRadianes = (indice / totalJugadores) * 2 * Math.PI + Math.PI/2;
+                let anguloEnRadianes = (indice / cantidadMesa) * 2 * Math.PI + Math.PI/2;
                 let posLeft = centroX + radioX * Math.cos(anguloEnRadianes);
                 let posTop = centroY + radioY * Math.sin(anguloEnRadianes);
                 
                 let div = document.createElement('div');
                 let extraClasses = "";
-                if(!jugador.activo) extraClasses += " fold-red";
+                if(!jugador.activo) extraClasses += " fold-red"; // Visualizamos a los retirados
                 if(isShowdown && jugador.esGanador) extraClasses += " win-green";
                 if(isShowdown && !jugador.esGanador && jugador.activo) extraClasses += " lose-yellow";
                 
@@ -1198,7 +1239,6 @@
                 let colorNombre = jugador.activo ? '#fff' : '#888';
                 divHtml += `<strong style="color:${colorNombre}">${jugador.nombre}</strong><br><small>$${jugador.fichas}</small>`;
                 
-                // REQ 1: MOSTRAR CARTAS LOGICA
                 let mostrarCartas = jugador.esHero || (isHudMode && jugador.activo);
 
                 if(mostrarCartas && street < 4 && jugador.activo && !isShowdown) {
@@ -1210,7 +1250,6 @@
                 } else if(jugador.activo && street < 4 && !isShowdown) {
                     divHtml += `<div class="cards-container">${renderCard({},true)}${renderCard({},true)}</div>`;
                 } else if(isShowdown && jugador.activo) {
-                    // Showdown final (Se muestra seguro en infinitas sin tocar los demás)
                     let forzarVisibles = (modoActual === 'infinitas' || modoActual === 'hud' || esModoOnline);
                     if(forzarVisibles) {
                         divHtml += `<div class="cards-container">${renderCard(jugador.cartas[0])}${renderCard(jugador.cartas[1])}</div><small style="color:var(--accent);">${jugador.nombreMano}</small>`;
@@ -1389,19 +1428,29 @@
             document.getElementById('opponent-action').innerText = `Apuesta enemiga de $${apuestaActual}. ¡Hora de Calcular!`; 
             renderMesaCompleta();
             
+            let miJugadorLocal = jugadoresMesa.find(j => j.esHero);
+            let estoyActivo = miJugadorLocal ? miJugadorLocal.activo : true;
+
+            // ✔️ Cambio CLAVE: Comprobación estricta de Fold. Si estás fold, no calculas.
             if(street < 3 && modoActual !== 'hud') { 
                 if(!esModoOnline) document.getElementById('btn-next-street').style.display = 'none'; 
-                calcularMatematicaInterna(); 
-                document.getElementById('question-panel').style.display = 'block'; 
-                document.getElementById('input-outs').value = ''; 
-                document.getElementById('input-prob').value = ''; 
-                document.getElementById('input-odds').value = ''; 
-                
-                if(esModoOnline) { 
-                    if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'none'; 
-                    document.getElementById('btn-ready-online').style.display = 'none';
-                    iniciarTimer(60, () => submitAnswer('call')); 
-                } 
+
+                if (estoyActivo) {
+                    calcularMatematicaInterna(); 
+                    document.getElementById('question-panel').style.display = 'block'; 
+                    document.getElementById('input-outs').value = ''; 
+                    document.getElementById('input-prob').value = ''; 
+                    document.getElementById('input-odds').value = ''; 
+                    
+                    if(esModoOnline) { 
+                        if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'none'; 
+                        document.getElementById('btn-ready-online').style.display = 'none';
+                        iniciarTimer(20, () => submitAnswer('fold')); // 20s Para CALCULAR
+                    }
+                } else {
+                    document.getElementById('question-panel').style.display = 'none'; 
+                    if(esModoOnline) document.getElementById('timer-display').innerText = "Estás fuera de esta mano (Fold).";
+                }
             } else if(modoActual === 'hud') {
                 actualizarHUDMatematico();
             }
@@ -1418,7 +1467,6 @@
             let esDecisionOk = decision === realAction;
             let aciertoGlobal = esOutsOk && esProbOk && esOddsOk && esDecisionOk;
             
-            // REQ 2: Reestructuración y Carga de Estadísticas
             statsData.outs.total++;
             if(esOutsOk) statsData.outs.hits++;
             
@@ -1437,8 +1485,8 @@
             document.getElementById('question-panel').style.display = 'none';
             let tiempoTardado = ((Date.now() - tiempoInicioMano) / 1000).toFixed(1);
             
+            // ✔️ Cambio CLAVE: La fase de explicación y su temporizador independiente de 20s
             if(esModoOnline && socket) { 
-                document.getElementById('timer-display').innerText = "Esperando que terminen los demás..."; 
                 socket.emit('enviarCalculoOnline', {
                     codigo: miCodigoSala, nombre: miNombreOnline, outs: userOuts, outsCorrecto: esOutsOk, 
                     porcentaje: userProb, probCorrecto: esProbOk, potOdds: userOdds, oddsCorrecto: esOddsOk, 
@@ -1446,14 +1494,18 @@
                 }); 
                 socket.emit('jugadorListo', { codigo: miCodigoSala, accion: decision }); 
                 
-                // Muestra el botón de "Saltear fase/Listo" para esperar a los demás.
+                document.getElementById('btn-explain').style.display = 'inline-block';
                 document.getElementById('btn-ready-online').style.display = 'inline-block';
-                
                 if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'inline-block'; 
-                stopTimer(); 
+                
+                document.getElementById('explanation-box').style.display = 'block'; // Muestra explicación inmediato
+                
+                // 20s dedicados puramente a leer y entender el error
+                iniciarTimer(20, () => marcarListoFaseOnline()); 
             } else { 
                 document.getElementById('btn-explain').style.display = 'inline-block'; 
                 document.getElementById('btn-next-street').style.display = 'inline-block'; 
+                document.getElementById('explanation-box').style.display = 'block'; 
             }
             
             let reglaTexto = street === 1 
@@ -1576,9 +1628,10 @@
             document.getElementById('timer-display').innerText = "-"; 
         }
         
-        function toggleExplanation() { 
+        function toggleExplanation(forzarAbierto = false) { 
             let box = document.getElementById('explanation-box'); 
-            box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+            if (forzarAbierto) box.style.display = 'block';
+            else box.style.display = (box.style.display === 'none') ? 'block' : 'none';
         }
     </script>
 </body>
