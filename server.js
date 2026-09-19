@@ -26,7 +26,6 @@ function crearMazo() {
             mazo.push({v: v, val: valoresMap[v], p: p.s, c: p.c});
         }
     }
-    // Mezclar mazo
     return mazo.sort(() => Math.random() - 0.5);
 }
 
@@ -38,29 +37,22 @@ function repartirCartas(sala) {
     // Repartir 2 cartas a cada jugador y resetear estados
     sala.jugadores.forEach(j => {
         j.listo = false;
-        j.activo = true; // Empiezan la mano activos (si se tiran, quedan fuera de ESTA mano)
+        j.activo = true; 
         j.cartas = [sala.mazo.pop(), sala.mazo.pop()];
     });
 }
 
 // ==========================================
-// FUNCIÓN CLAVE: Verificar si todos están listos
+// FUNCIÓN: Verificar si todos están listos (Fases o revisiones)
 // ==========================================
 function verificarTodosListos(sala, codigoSala) {
-    // Filtramos solo a los jugadores que siguen en la mano (no foldearon)
     const jugadoresActivos = sala.jugadores.filter(j => j.activo);
-    
-    // Verificamos si TODOS los activos están listos
     const todosListos = jugadoresActivos.length > 0 && jugadoresActivos.every(j => j.listo);
     
-    // Le mandamos a todos la actualización de quién falta
     io.to(codigoSala).emit('estadoListosActualizado', { jugadores: sala.jugadores });
 
     if (todosListos) {
-        // Reseteamos el estado de "listo" para la siguiente fase
         sala.jugadores.forEach(j => j.listo = false);
-        
-        // Le avisamos a todos los clientes que salten la fase automáticamente
         io.to(codigoSala).emit('todosListosAvanzarFase');
     }
 }
@@ -109,7 +101,7 @@ io.on('connection', (socket) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.estadoJuego = 'jugando';
-            repartirCartas(sala); // El crupier (servidor) reparte todo
+            repartirCartas(sala); 
             io.to(codigo).emit('partidaIniciadaOnline', { 
                 dealerIndex: sala.dealerIndex,
                 mesa: sala.mesa,
@@ -123,16 +115,16 @@ io.on('connection', (socket) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.jugadores.forEach(j => j.listo = false);
-            io.to(codigo).emit('avanzarSiguienteRonda'); // Avanza Flop, Turn, River
+            io.to(codigo).emit('avanzarSiguienteRonda'); 
         }
     });
 
-    // 4.b Iniciar NUEVA Mano (Acá rota el Dealer y se reparten nuevas cartas)
+    // 4.b Iniciar NUEVA Mano (Rota el Dealer y se reparten nuevas cartas)
     socket.on('siguienteManoOnline', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
-            sala.dealerIndex = (sala.dealerIndex + 1) % sala.jugadores.length; // ROTACIÓN CORRECTA
-            repartirCartas(sala); // El crupier reparte las cartas para la nueva mano
+            sala.dealerIndex = (sala.dealerIndex + 1) % sala.jugadores.length; 
+            repartirCartas(sala); 
             io.to(codigo).emit('nuevaManoOnline', { 
                 dealerIndex: sala.dealerIndex,
                 mesa: sala.mesa,
@@ -141,7 +133,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 5. Cálculos y Ranking
+    // 5. Sincronización de Acciones de Póker por Turnos (Nuevo para las apuestas y subidas)
+    socket.on('accionPoker', (datos) => {
+        // Reenviamos la acción de apuesta/fold/raise al resto de la sala en tiempo real
+        socket.to(datos.codigo).emit('accionPoker', {
+            jugadorId: datos.jugadorId,
+            accion: datos.accion,
+            monto: datos.monto,
+            statsMath: datos.statsMath
+        });
+    });
+
+    // 6. Cálculos y Ranking
     socket.on('enviarCalculoOnline', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
@@ -165,7 +168,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 6. Marcar Listo / Fold (Acciones de toma de decisión)
+    // 7. Marcar Listo / Fold
     socket.on('jugadorListo', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
@@ -173,14 +176,14 @@ io.on('connection', (socket) => {
             if (jugador) {
                 jugador.listo = true;
                 if(datos.accion === 'fold') {
-                    jugador.activo = false; // El jugador foldea y queda excluido hasta la próxima mano
+                    jugador.activo = false; 
                 }
             }
             verificarTodosListos(sala, datos.codigo);
         }
     });
 
-    // 7. Saltear Fase de Revisión
+    // 8. Saltear Fase de Revisión
     socket.on('jugadorListoFase', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
