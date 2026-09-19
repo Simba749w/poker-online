@@ -18,18 +18,13 @@ io.on('connection', (socket) => {
             anfitrion: socket.id,
             jugadores: [{ id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false, puntajeGlobal: 0, activo: true }],
             estadoJuego: 'esperando',
-            dealerIndex: 0,
-            // NUEVAS VARIABLES AÑADIDAS PARA GESTIÓN REAL DE MESA
-            potTotal: 0,
-            apuestaActual: 200,
-            turnoActual: 0,
-            street: 0
+            dealerIndex: 0
         };
 
         socket.join(codigoSala);
         io.to(codigoSala).emit('actualizarSalaOnline', {
             codigoSala: codigoSala,
-            anfitrion: socket.id, 
+            anfitrion: socket.id, // FUNDAMENTAL PARA EL BUG DEL HOST
             jugadores: salas[codigoSala].jugadores.map(j => ({ ...j, esAnfitrion: (j.id === salas[codigoSala].anfitrion) }))
         });
     });
@@ -46,7 +41,7 @@ io.on('connection', (socket) => {
         
         io.to(datos.codigo).emit('actualizarSalaOnline', {
             codigoSala: datos.codigo,
-            anfitrion: sala.anfitrion, 
+            anfitrion: sala.anfitrion, // FUNDAMENTAL PARA EL BUG DEL HOST
             jugadores: sala.jugadores.map(j => ({ ...j, esAnfitrion: (j.id === sala.anfitrion) }))
         });
     });
@@ -66,7 +61,6 @@ io.on('connection', (socket) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.jugadores.forEach(j => j.listo = false);
-            sala.street++; // ACTUALIZADO: Registramos el progreso de calle en el server
             io.to(codigo).emit('avanzarSiguienteRonda'); // Avanza Flop, Turn, River
         }
     });
@@ -76,7 +70,7 @@ io.on('connection', (socket) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.dealerIndex = (sala.dealerIndex + 1) % sala.jugadores.length; // ROTACIÓN CORRECTA
-            sala.jugadores.forEach(j => { j.listo = false; j.activo = (j.fichas > 0); }); // ACTUALIZADO: Solo activos si tienen fichas
+            sala.jugadores.forEach(j => { j.listo = false; j.activo = true; });
             io.to(codigo).emit('nuevaManoOnline', { dealerIndex: sala.dealerIndex });
         }
     });
@@ -105,7 +99,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 6. Marcar Listo / Fold (Mantenido por retrocompatibilidad)
+    // 6. Marcar Listo / Fold
     socket.on('jugadorListo', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
@@ -118,65 +112,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ==========================================
-    // NUEVAS FUNCIONES DE LÓGICA DE JUEGO AÑADIDAS 
-    // ==========================================
-
-    // 7. Gestión de Apuestas y Turnos Online
-    socket.on('accionJugador', (datos) => {
-        const sala = salas[datos.codigo];
-        if(sala) {
-            let jugador = sala.jugadores.find(j => j.id === socket.id);
-            if(jugador) {
-                if(datos.accion === 'fold') {
-                    jugador.activo = false;
-                } else {
-                    let costo = datos.monto || 0;
-                    jugador.fichas -= costo;
-                    sala.potTotal += costo;
-                    if(datos.accion === 'raise' && datos.monto > sala.apuestaActual) {
-                        sala.apuestaActual = datos.monto;
-                    }
-                }
-            }
-            // Sincronizar el estado monetario con el resto de la mesa
-            io.to(datos.codigo).emit('actualizarMesa', {
-                jugadores: sala.jugadores,
-                potTotal: sala.potTotal,
-                apuestaActual: sala.apuestaActual,
-                turnoActual: datos.siguienteTurno
-            });
-        }
-    });
-
-    // 8. Sincronización Inicial de Ciegas y Stacks
-    socket.on('iniciarRondaOnline', (datos) => {
-        const sala = salas[datos.codigo];
-        if(sala && sala.anfitrion === socket.id) {
-            sala.potTotal = datos.potInicial;
-            sala.apuestaActual = datos.apuestaInicial;
-            sala.street = 0;
-            datos.jugadores.forEach(jd => {
-                let j = sala.jugadores.find(x => x.nombre === jd.nombre || x.id === jd.id);
-                if(j) {
-                    j.fichas = jd.fichas;
-                    j.activo = (jd.fichas > 0);
-                }
-            });
-            io.to(datos.codigo).emit('actualizarMesa', {
-                jugadores: sala.jugadores,
-                potTotal: sala.potTotal,
-                apuestaActual: sala.apuestaActual,
-                turnoActual: datos.turnoActual
-            });
-        }
-    });
-
-    // 9. Sincronizador de Fases 40s (Calculo -> Review -> Avanzar)
-    socket.on('sincronizarFase', (datos) => {
-        io.to(datos.codigo).emit('cambioFase', datos);
-    });
-
     socket.on('disconnect', () => {
         console.log('Jugador desconectado:', socket.id);
     });
@@ -185,4 +120,4 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log(`Servidor de Poker en puerto ${PORT}`);
-});
+}); 
