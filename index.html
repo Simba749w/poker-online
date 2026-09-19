@@ -664,12 +664,17 @@
                         <button class="btn btn-accent" id="btn-explain" style="display: none;" onclick="toggleExplanation()">💡 Ver Análisis Detallado</button>
                         <button class="btn btn-info" id="btn-next-street" style="display: none;" onclick="nextStreet()">Avanzar Siguiente Calle ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand" style="display: none;" onclick="iniciarNuevaMano()">Siguiente Mano (Rotar Posiciones) 🔄</button>
+                        
+                        <!-- BOTONES EXCLUSIVOS MODO ONLINE -->
+                        <button class="btn btn-accent" id="btn-ready-online" style="display:none;" onclick="marcarListoFaseOnline()">Estoy Listo / Saltear Fase ✅</button>
                         <button class="btn btn-info" id="btn-next-street-host" style="display:none;" onclick="avanzarCalleHostOnline()">Avanzar Calle (Líder 👑) ➡️</button>
                         <button class="btn btn-primary" id="btn-next-hand-host" style="display:none;" onclick="iniciarNuevaManoOnline()">Siguiente Mano (Líder 👑) 🔄</button>
                     </div>
 
-                    <div id="host-ready-status" style="margin-top:10px; font-size:0.9rem; color:#f39c12; display:none; text-align:center;">
-                        <strong>Estado de Jugadores:</strong> <span id="ready-counter">0/0 listos</span>
+                    <!-- ESTADO DE LISTOS (VISIBLE PARA TODOS EN ONLINE) -->
+                    <div id="online-ready-status" style="margin-top:15px; font-size:0.95rem; color:#f39c12; display:none; text-align:center; padding:10px; background:#111; border:1px solid #444; border-radius:5px;">
+                        <strong>Estado de Jugadores:</strong> <span id="ready-counter" style="color:var(--primary); font-weight:bold;">0/0 listos</span><br>
+                        <span id="missing-players-list" style="font-size:0.85rem; color:var(--danger);">Falta: ---</span>
                     </div>
                     
                     <div class="explanation-box" id="explanation-box"></div>
@@ -952,6 +957,11 @@
         function avanzarCalleHostOnline() { socket.emit('avanzarCalleHost', miCodigoSala); }
         function iniciarNuevaManoOnline() { socket.emit('siguienteManoOnline', miCodigoSala); }
 
+        function marcarListoFaseOnline() {
+            document.getElementById('btn-ready-online').style.display = 'none';
+            socket.emit('jugadorListoFase', { codigo: miCodigoSala });
+        }
+
         if (socket) {
             socket.on('actualizarSalaOnline', (datos) => {
                 miCodigoSala = datos.codigoSala; 
@@ -1000,6 +1010,9 @@
                 let cantTotal = data.jugadores.length;
                 document.getElementById('ready-counter').innerText = `${cantListos}/${cantTotal} listos`;
                 
+                let faltan = data.jugadores.filter(j => !j.listo).map(j => j.nombre).join(', ');
+                document.getElementById('missing-players-list').innerText = faltan ? `Falta: ${faltan}` : '¡Todos listos!';
+                
                 data.jugadores.forEach((jSrv) => { 
                     let jLocal = jugadoresMesa.find(jl => jl.nombre === jSrv.nombre || jl.id === jSrv.id); 
                     if(jLocal && !jSrv.activo) jLocal.activo = false; 
@@ -1023,6 +1036,7 @@
         function marcarListoOnline(accion) {
             document.getElementById('online-preflop-actions').style.display = 'none'; 
             document.getElementById('timer-display').innerText = "Esperando resto...";
+            document.getElementById('btn-ready-online').style.display = 'none';
             socket.emit('jugadorListo', { codigo: miCodigoSala, accion: accion }); 
             stopTimer();
         }
@@ -1125,8 +1139,10 @@
             
             if(esModoOnline) { 
                 document.getElementById('online-preflop-actions').style.display = 'block'; 
-                if(esAnfitrionSala) document.getElementById('host-ready-status').style.display = 'block'; 
-                iniciarTimer(30, () => marcarListoOnline('call')); 
+                document.getElementById('online-ready-status').style.display = 'block'; 
+                document.getElementById('btn-ready-online').style.display = 'none'; // Se oculta en esta fase
+                // Pre-flop timer de 10s y si no presiona nada, hace auto-fold según los requisitos.
+                iniciarTimer(10, () => marcarListoOnline('fold')); 
             } else { 
                 document.getElementById('online-preflop-actions').style.display = 'none'; 
             }
@@ -1379,6 +1395,7 @@
                 
                 if(esModoOnline) { 
                     if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'none'; 
+                    document.getElementById('btn-ready-online').style.display = 'none';
                     iniciarTimer(60, () => submitAnswer('call')); 
                 } 
             } else if(modoActual === 'hud') {
@@ -1424,6 +1441,10 @@
                     tiempoSegundos: tiempoTardado
                 }); 
                 socket.emit('jugadorListo', { codigo: miCodigoSala, accion: decision }); 
+                
+                // Muestra el botón de "Saltear fase/Listo" para esperar a los demás.
+                document.getElementById('btn-ready-online').style.display = 'inline-block';
+                
                 if(esAnfitrionSala) document.getElementById('btn-next-street-host').style.display = 'inline-block'; 
                 stopTimer(); 
             } else { 
@@ -1526,7 +1547,10 @@
                 : `¡<strong>${ganadorFinal.nombre}</strong> ganó la mano con <strong>${ganadorFinal.nombreMano}</strong>!`;
             
             document.getElementById('opponent-action').innerHTML = `<strong>SHOWDOWN:</strong> ${showdownTexto}`;
-            if(esModoOnline && esAnfitrionSala) document.getElementById('btn-next-hand-host').style.display = 'inline-block'; 
+            if(esModoOnline) {
+                document.getElementById('btn-ready-online').style.display = 'inline-block';
+                if(esAnfitrionSala) document.getElementById('btn-next-hand-host').style.display = 'inline-block';
+            }
         }
 
         // ==========================================
