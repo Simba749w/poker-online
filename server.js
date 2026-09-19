@@ -9,6 +9,41 @@ app.use(express.static(__dirname + '/public'));
 const salas = {};
 
 // ==========================================
+// LÓGICA DE CARTAS EN EL SERVIDOR (Sincronización)
+// ==========================================
+const palos = [
+    {s:'♥', c:'red'}, {s:'♦', c:'red'},
+    {s:'♣', c:'black'}, {s:'♠', c:'black'}
+];
+const valoresMap = {
+    '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14
+};
+
+function crearMazo() {
+    let mazo = [];
+    for(let p of palos) {
+        for(let v in valoresMap) {
+            mazo.push({v: v, val: valoresMap[v], p: p.s, c: p.c});
+        }
+    }
+    // Mezclar mazo
+    return mazo.sort(() => Math.random() - 0.5);
+}
+
+function repartirCartas(sala) {
+    sala.mazo = crearMazo();
+    // Repartir 5 cartas comunitarias (Board) para toda la sala
+    sala.mesa = [sala.mazo.pop(), sala.mazo.pop(), sala.mazo.pop(), sala.mazo.pop(), sala.mazo.pop()];
+    
+    // Repartir 2 cartas a cada jugador y resetear estados
+    sala.jugadores.forEach(j => {
+        j.listo = false;
+        j.activo = true; // Empiezan la mano activos (si se tiran, quedan fuera de ESTA mano)
+        j.cartas = [sala.mazo.pop(), sala.mazo.pop()];
+    });
+}
+
+// ==========================================
 // FUNCIÓN CLAVE: Verificar si todos están listos
 // ==========================================
 function verificarTodosListos(sala, codigoSala) {
@@ -38,9 +73,10 @@ io.on('connection', (socket) => {
         const codigoSala = Math.random().toString(36).substring(2, 6).toUpperCase();
         salas[codigoSala] = {
             anfitrion: socket.id,
-            jugadores: [{ id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false, puntajeGlobal: 0, activo: true }],
+            jugadores: [{ id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false, puntajeGlobal: 0, activo: true, cartas: [] }],
             estadoJuego: 'esperando',
-            dealerIndex: 0
+            dealerIndex: 0,
+            mesa: []
         };
 
         socket.join(codigoSala);
@@ -58,7 +94,7 @@ io.on('connection', (socket) => {
         if (sala.estadoJuego === 'jugando') return socket.emit('errorSala', 'La partida ya comenzó.');
         if (sala.jugadores.length >= 9) return socket.emit('errorSala', 'La mesa está llena (máximo 9).');
 
-        sala.jugadores.push({ id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false, puntajeGlobal: 0, activo: true });
+        sala.jugadores.push({ id: socket.id, nombre: datos.nombre, fichas: 10000, listo: false, puntajeGlobal: 0, activo: true, cartas: [] });
         socket.join(datos.codigo);
         
         io.to(datos.codigo).emit('actualizarSalaOnline', {
@@ -73,8 +109,12 @@ io.on('connection', (socket) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.estadoJuego = 'jugando';
-            sala.jugadores.forEach(j => { j.listo = false; j.activo = true; });
-            io.to(codigo).emit('partidaIniciadaOnline', { dealerIndex: sala.dealerIndex });
+            repartirCartas(sala); // El crupier (servidor) reparte todo
+            io.to(codigo).emit('partidaIniciadaOnline', { 
+                dealerIndex: sala.dealerIndex,
+                mesa: sala.mesa,
+                jugadores: sala.jugadores
+            });
         }
     });
 
@@ -87,13 +127,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 4.b Iniciar NUEVA Mano (Acá rota el Dealer)
+    // 4.b Iniciar NUEVA Mano (Acá rota el Dealer y se reparten nuevas cartas)
     socket.on('siguienteManoOnline', (codigo) => {
         const sala = salas[codigo];
         if (sala && sala.anfitrion === socket.id) {
             sala.dealerIndex = (sala.dealerIndex + 1) % sala.jugadores.length; // ROTACIÓN CORRECTA
-            sala.jugadores.forEach(j => { j.listo = false; j.activo = true; });
-            io.to(codigo).emit('nuevaManoOnline', { dealerIndex: sala.dealerIndex });
+            repartirCartas(sala); // El crupier reparte las cartas para la nueva mano
+            io.to(codigo).emit('nuevaManoOnline', { 
+                dealerIndex: sala.dealerIndex,
+                mesa: sala.mesa,
+                jugadores: sala.jugadores
+            });
         }
     });
 
@@ -128,13 +172,15 @@ io.on('connection', (socket) => {
             let jugador = sala.jugadores.find(j => j.id === socket.id);
             if (jugador) {
                 jugador.listo = true;
-                if(datos.accion === 'fold') jugador.activo = false; // Se tira, no estorba más en la mano
+                if(datos.accion === 'fold') {
+                    jugador.activo = false; // El jugador foldea y queda excluido hasta la próxima mano
+                }
             }
             verificarTodosListos(sala, datos.codigo);
         }
     });
 
-    // 7. Saltear Fase de Revisión (NUEVO)
+    // 7. Saltear Fase de Revisión
     socket.on('jugadorListoFase', (datos) => {
         const sala = salas[datos.codigo];
         if (sala) {
